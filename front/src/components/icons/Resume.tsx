@@ -1,21 +1,16 @@
-interface IconOptions {
-  width?: number;
-  height?: number;
-  color?: string;
-  className?: string;
-}
+import IconOptions from "@/app/types/IconOptions";
 
 const ResumeIcon = ({
-  width = 20,
-  height = 20,
-  color = "#0B798B",
+  width = 2,
+  height = 2,
+  color = "#5046e5",
   className,
 }: IconOptions) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
-    width={width}
-    height={height}
+    width={width + "rem"}
+    height={height + "rem"}
     color={color}
     fill="none"
     className={className}
