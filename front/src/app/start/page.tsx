@@ -1,7 +1,7 @@
 // page.tsx
 "use client";
 
-import SubmitButton from "@/components/submitButton";
+import SubmitButton from "@/components/SubmitButton";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
 
