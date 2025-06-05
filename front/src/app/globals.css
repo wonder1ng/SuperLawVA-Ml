@@ -24,6 +24,7 @@
   --color-yellowL: #fefce8;
   --color-green: #58ba72;
   --color-greenL: #dcfce7;
+  --font-sans: "Noto Sans KR";
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,10 +35,43 @@
 }
 
 html {
-  font-size: 62.5%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  height: 100%;
+  /* font-size: 62.5%; */
+  /* font-size: 2.5vw; */
+  font-size: clamp(62.5%, min(2.5vw, 1.15vh), 200%);
+  outline: none;
+  margin: none;
+  padding: none;
 }
 body {
   background: var(--background);
   color: var(--foreground);
+  height: 100%;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: none;
+  border: none;
 }
