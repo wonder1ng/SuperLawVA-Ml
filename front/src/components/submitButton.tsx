@@ -12,6 +12,7 @@ interface StyledButtonProps {
   disabled?: boolean;
   icon?: React.ReactNode;
   className?: string;
+  subStyle?: boolean;
 }
 
 const StyledButton = styled.button.withConfig({
@@ -24,21 +25,32 @@ const StyledButton = styled.button.withConfig({
       "fontWeight",
       "gap",
       "background",
+      "subStyle",
     ].includes(prop),
 })<StyledButtonProps>`
   width: ${({ width }) => width + "rem"};
   height: ${({ height }) => height + "rem"};
-  background: ${({ disabled, background }) =>
+
+  background: ${({ disabled, subStyle, background }) =>
     disabled
-      ? "#9ca3af"
-      : background || "linear-gradient(180deg, #5046E5 50%, #9134EB 143.75%)"};
-  box-shadow: ${({ disabled }) =>
+      ? "rgba(128, 128, 128, 0.55)"
+      : subStyle
+      ? "#F7F9FB"
+      : background || "#5046E5"};
+
+  border: ${({ disabled, subStyle }) =>
+    disabled || !subStyle ? "none" : "0.14rem solid #5046E5"};
+
+  /* box-shadow: ${({ disabled }) =>
     disabled
       ? "none"
-      : "0px 0.4rem 0.4rem rgba(0, 0, 0, 0.25), inset 0px 0.1rem 0.4rem rgba(0, 0, 0, 0.25)"};
-  border-radius: 3rem;
+      : "0px 0.4rem 0.4rem rgba(0, 0, 0, 0.25), inset 0px 0.1rem 0.4rem rgba(0, 0, 0, 0.25)"}; */
 
-  color: ${({ fontColor }) => fontColor};
+  border-radius: 50px;
+
+  color: ${({ disabled, subStyle, fontColor }) =>
+    disabled ? "#ffffff" : subStyle ? "#5046E5" : fontColor || "#ffffff"};
+
   font-weight: ${({ fontWeight }) => fontWeight};
   font-size: ${({ fontSize }) => fontSize + "rem"};
   line-height: 2.6rem;
@@ -65,6 +77,7 @@ export default function SubmitButton({
   children,
   icon,
   className,
+  subStyle = false,
 }: StyledButtonProps) {
   return (
     <StyledButton
@@ -77,6 +90,7 @@ export default function SubmitButton({
       disabled={disabled}
       gap={gap}
       className={className}
+      subStyle={subStyle}
     >
       {icon && <span>{icon}</span>}
       {children}
