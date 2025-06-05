@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import SubmitButton from "@/components/submitButton";
+import SubmitButton from "@/components/SubmitButton";
 import styled from "styled-components";
 import ArrowLeftIcon from "@/components/icons/ArrowLeft";
 import StatusIcon from "@/components/icons/Status";
