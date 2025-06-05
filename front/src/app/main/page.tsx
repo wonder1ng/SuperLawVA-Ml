@@ -2,9 +2,9 @@
 "use client";
 
 import { useState } from "react";
-import SubmitButton from "@/components/submitButton";
 import ResumeIcon from "@/components/icons/Resume";
 import StyledInput from "@/components/StyledInput";
+import SubmitButton from "@/components/SubmitButton";
 
 function Greet() {
   const [inputValue, setInputValue] = useState("");
