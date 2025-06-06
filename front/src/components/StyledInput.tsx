@@ -1,52 +1,19 @@
-// StyledInput.tsx
 "use client";
 
-import styled from "styled-components";
+import React from "react";
 
-interface StyledInputProps {
+interface TailwindInputProps {
   width?: number | string;
-  height?: number | string;
-  fontWeight?: number;
+  fontWeight?: number | string;
   fontSize?: number | string;
-  type: string;
+  type?: string;
   className?: string;
   placeholder?: string;
   value?: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const InputContainer = styled.div<{
-  width: number | string;
-  fontWeight: number;
-  fontSize: number | string;
-}>`
-  display: flex;
-  flex-direction: column;
-  justify-content: start;
-
-  input {
-    width: ${({ width }) => width};
-    font-weight: ${({ fontWeight }) => fontWeight};
-    font-size: ${({ fontSize }) => fontSize};
-    padding: 0 1rem;
-    line-height: 2rem;
-    border: none;
-    background: transparent;
-
-    &::placeholder {
-      color: #9ca3af;
-      font-size: ${({ fontSize }) => fontSize};
-    }
-  }
-
-  .line {
-    width: ${({ width }) => width};
-    border: 0.15rem solid rgba(187, 187, 187, 0.4);
-    margin-top: 0.2rem;
-  }
-`;
-
-export default function StyledInput({
+export default function TailwindInput({
   width = "32rem",
   fontWeight = 400,
   fontSize = "1.4rem",
@@ -55,21 +22,28 @@ export default function StyledInput({
   placeholder,
   value,
   onChange,
-}: StyledInputProps) {
+}: TailwindInputProps) {
   return (
-    <InputContainer
-      width={width}
-      fontSize={fontSize}
-      className={className}
-      fontWeight={fontWeight}
-    >
+    <div className={`flex flex-col justify-start ${className}`}>
       <input
         type={type}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        className="bg-transparent border-none px-4 outline-none placeholder:text-gray-400"
+        style={{
+          width: typeof width === "number" ? `${width}rem` : width,
+          fontWeight: fontWeight,
+          fontSize: typeof fontSize === "number" ? `${fontSize}rem` : fontSize,
+          lineHeight: "2rem",
+        }}
       />
-      <div className="line" />
-    </InputContainer>
+      <div
+        className="mt-[0.2rem] border-[0.15rem] border-[#bbb6]"
+        style={{
+          width: typeof width === "number" ? `${width}rem` : width,
+        }}
+      />
+    </div>
   );
 }

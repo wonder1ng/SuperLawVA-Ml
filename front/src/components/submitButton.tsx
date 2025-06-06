@@ -1,8 +1,10 @@
-import styled from "styled-components";
+"use client";
 
-interface StyledButtonProps {
-  width?: number;
-  height?: number;
+import React from "react";
+
+interface SubmitButtonProps {
+  width?: number | string;
+  height?: number | string;
   fontColor?: string;
   fontSize?: number;
   fontWeight?: number;
@@ -14,56 +16,6 @@ interface StyledButtonProps {
   className?: string;
   subStyle?: boolean;
 }
-
-const StyledButton = styled.button.withConfig({
-  shouldForwardProp: (prop) =>
-    ![
-      "width",
-      "height",
-      "fontColor",
-      "fontSize",
-      "fontWeight",
-      "gap",
-      "background",
-      "subStyle",
-    ].includes(prop),
-})<StyledButtonProps>`
-  width: ${({ width }) => width + "rem"};
-  height: ${({ height }) => height + "rem"};
-
-  background: ${({ disabled, subStyle, background }) =>
-    disabled
-      ? "rgba(128, 128, 128, 0.55)"
-      : subStyle
-      ? "#F7F9FB"
-      : background || "#5046E5"};
-
-  border: ${({ disabled, subStyle }) =>
-    disabled || !subStyle ? "none" : "0.14rem solid #5046E5"};
-
-  /* box-shadow: ${({ disabled }) =>
-    disabled
-      ? "none"
-      : "0px 0.4rem 0.4rem rgba(0, 0, 0, 0.25), inset 0px 0.1rem 0.4rem rgba(0, 0, 0, 0.25)"}; */
-
-  border-radius: 50px;
-
-  color: ${({ disabled, subStyle, fontColor }) =>
-    disabled ? "#ffffff" : subStyle ? "#5046E5" : fontColor || "#ffffff"};
-
-  font-weight: ${({ fontWeight }) => fontWeight};
-  font-size: ${({ fontSize }) => fontSize + "rem"};
-  line-height: 2.6rem;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
-  pointer-events: ${({ disabled }) => (disabled ? "none" : "auto")};
-  opacity: ${({ disabled }) => (disabled ? 0.6 : 1)};
-  gap: ${({ gap }) => gap + "rem"};
-`;
 
 export default function SubmitButton({
   width = 20,
@@ -78,22 +30,42 @@ export default function SubmitButton({
   icon,
   className,
   subStyle = false,
-}: StyledButtonProps) {
+}: SubmitButtonProps) {
+  const baseColor = background || "#5046E5";
+  const buttonBg = disabled
+    ? "rgba(128, 128, 128, 0.55)"
+    : subStyle
+    ? "#F7F9FB"
+    : baseColor;
+
+  const border = subStyle && !disabled ? "0.14rem solid #5046E5" : "none";
+  const color = disabled
+    ? "#ffffff"
+    : subStyle
+    ? "#5046E5"
+    : fontColor || "#ffffff";
+
   return (
-    <StyledButton
-      width={width}
-      height={height}
-      background={background}
-      fontColor={fontColor}
-      fontSize={fontSize}
-      fontWeight={fontWeight}
+    <button
+      className={`flex justify-center items-center rounded-full transition-all duration-200 ${className}`}
       disabled={disabled}
-      gap={gap}
-      className={className}
-      subStyle={subStyle}
+      style={{
+        width: typeof width === "number" ? `${width}rem` : width,
+        height: typeof height === "number" ? `${height}rem` : height,
+        background: buttonBg,
+        border: border,
+        color: color,
+        fontWeight: fontWeight,
+        fontSize: typeof fontSize === "number" ? `${fontSize}rem` : fontSize,
+        lineHeight: "2.6rem",
+        gap: typeof gap === "number" ? `${gap}rem` : gap,
+        cursor: disabled ? "not-allowed" : "pointer",
+        pointerEvents: disabled ? "none" : "auto",
+        opacity: disabled ? 0.6 : 1,
+      }}
     >
       {icon && <span>{icon}</span>}
       {children}
-    </StyledButton>
+    </button>
   );
 }
