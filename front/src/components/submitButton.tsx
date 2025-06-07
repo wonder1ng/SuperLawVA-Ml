@@ -10,6 +10,7 @@ interface SubmitButtonProps {
   fontWeight?: number;
   gap?: number;
   background?: string;
+  borderRadius?: number | string;
   children?: React.ReactNode;
   disabled?: boolean;
   icon?: React.ReactNode;
@@ -26,6 +27,7 @@ export default function SubmitButton({
   fontSize = 2.2,
   gap = 0.8,
   background,
+  borderRadius,
   disabled = false,
   children,
   icon,
@@ -55,7 +57,7 @@ export default function SubmitButton({
 
   return (
     <button
-      className={`flex justify-center items-center rounded-full transition-all duration-200 ${className}`}
+      className={`flex justify-center items-center transition-all duration-200 ${className}`}
       disabled={disabled}
       onClick={onClick}
       style={{
@@ -66,6 +68,8 @@ export default function SubmitButton({
         color: color,
         fontWeight: fontWeight,
         fontSize: typeof fontSize === "number" ? `${fontSize}rem` : fontSize,
+        borderRadius:
+          typeof borderRadius === "number" ? `${borderRadius}px` : borderRadius,
         lineHeight: "2.6rem",
         gap: typeof gap === "number" ? `${gap}rem` : gap,
         cursor: disabled ? "not-allowed" : "pointer",
