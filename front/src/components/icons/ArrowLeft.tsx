@@ -5,8 +5,8 @@ import type { MouseEventHandler } from "react";
 import IconOptions, { LinkIconProps } from "@/app/types/IconOptions";
 
 const ArrowLeftIcon = ({
-  width = 30,
-  height = 30,
+  width = "3rem",
+  height = "3rem",
   color = "#000000",
   className,
   to,
@@ -17,13 +17,13 @@ const ArrowLeftIcon = ({
   const handleClick: MouseEventHandler<SVGSVGElement> = (e) => {
     if (onClick) {
       onClick(e); // 외부 핸들러 실행
-    }
-
-    if (!e.defaultPrevented) {
-      if (to) {
-        router.push(to); // 지정된 경로로 이동
-      } else {
-        router.back(); // 경로가 없으면 뒤로가기
+    } else {
+      if (!e.defaultPrevented) {
+        if (to) {
+          router.push(to); // 지정된 경로로 이동
+        } else {
+          router.back(); // 경로가 없으면 뒤로가기
+        }
       }
     }
   };
