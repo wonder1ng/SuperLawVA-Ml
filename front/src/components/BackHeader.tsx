@@ -13,7 +13,7 @@ export default function BackHeader({
   children,
 }: BackLinkProps) {
   return (
-    <header className="h-24 grid items-end place-items-center relative">
+    <header className="mt-20 grid items-end place-items-center relative">
       <ArrowLeftIcon
         width={width}
         height={height}
