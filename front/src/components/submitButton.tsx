@@ -10,6 +10,7 @@ interface SubmitButtonProps {
   fontWeight?: number;
   gap?: number;
   background?: string;
+  borderColor?: string;
   borderRadius?: number | string;
   children?: React.ReactNode;
   disabled?: boolean;
@@ -26,23 +27,28 @@ export default function SubmitButton({
   fontWeight = 700,
   fontSize = 2.2,
   gap = 0.8,
-  background,
-  borderRadius,
+  background = "#6000ff",
+  borderRadius = 50,
   disabled = false,
   children,
   icon,
   className,
+  borderColor,
   onClick,
   subStyle = false,
 }: SubmitButtonProps) {
-  const baseColor = background || "#5046E5";
   const buttonBg = disabled
     ? "rgba(128, 128, 128, 0.55)"
     : subStyle
     ? "#F7F9FB"
-    : baseColor;
+    : background;
 
-  const border = subStyle && !disabled ? "0.14rem solid #5046E5" : "none";
+  const border =
+    subStyle && !disabled
+      ? "0.15rem solid #6000ff"
+      : borderColor && !disabled
+      ? "0.15rem solid " + borderColor
+      : "none";
   const color = disabled
     ? "#ffffff"
     : subStyle
