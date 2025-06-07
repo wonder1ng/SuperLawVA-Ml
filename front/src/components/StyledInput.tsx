@@ -2,7 +2,7 @@
 
 import React from "react";
 
-interface TailwindInputProps {
+interface Props {
   width?: number | string;
   fontWeight?: number | string;
   fontSize?: number | string;
@@ -22,7 +22,7 @@ export default function TailwindInput({
   placeholder,
   value,
   onChange,
-}: TailwindInputProps) {
+}: Props) {
   return (
     <div className={`flex flex-col justify-start ${className}`}>
       <input
@@ -39,7 +39,7 @@ export default function TailwindInput({
         }}
       />
       <div
-        className="mt-[0.2rem] border-[0.15rem] border-[#bbb6]"
+        className="mt-[0.6rem] border-[0.15rem] border-[#bbb6]"
         style={{
           width: typeof width === "number" ? `${width}rem` : width,
         }}
