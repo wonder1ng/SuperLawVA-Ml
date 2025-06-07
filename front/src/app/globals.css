@@ -16,7 +16,7 @@
   --color-main: #5046e5;
   --color-mainL: #eef2ff;
   --color-subText: #9ca3af;
-  --color-bcg: #f7f9fb;
+  --color-bgc: #f7f9fb;
   --color-inputBox: #f3f4f6;
   --color-red: #fee2e1;
   --color-redL: #fef2f2;
@@ -51,6 +51,7 @@ body {
   color: var(--foreground);
   height: 100%;
   font-family: Arial, Helvetica, sans-serif;
+  background-color: #f7f9fb;
 }
 
 img,
