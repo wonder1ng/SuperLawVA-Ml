@@ -5,8 +5,8 @@ import type { MouseEventHandler } from "react";
 import IconOptions, { LinkIconProps } from "@/app/types/IconOptions";
 
 const ArrowLeftIcon = ({
-  width = "3rem",
-  height = "3rem",
+  width = 3,
+  height = 3,
   color = "#000000",
   className,
   to,
@@ -32,8 +32,8 @@ const ArrowLeftIcon = ({
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
-      width={width}
-      height={height}
+      width={typeof width == "number" ? width + "rem" : width}
+      height={typeof height == "number" ? height + "rem" : height}
       color={color}
       fill="none"
       className={className}

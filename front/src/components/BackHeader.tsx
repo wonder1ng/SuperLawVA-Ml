@@ -6,14 +6,14 @@ interface BackLinkProps extends LinkIconProps {
 }
 
 export default function BackHeader({
-  width = "3rem",
-  height = "3rem",
+  width = 3,
+  height = 3,
   color = "#000000",
   to,
   children,
 }: BackLinkProps) {
   return (
-    <header className="mt-20 grid items-end place-items-center relative">
+    <header className="grid items-end place-items-center relative">
       <ArrowLeftIcon
         width={width}
         height={height}

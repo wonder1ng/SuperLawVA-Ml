@@ -1,15 +1,15 @@
 import IconOptions from "@/app/types/IconOptions";
 
 const UserIcon = ({
-  width = 20,
-  height = 20,
+  width = 2,
+  height = 2,
   color = "#0B798B",
 }: IconOptions) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
-    width={width}
-    height={height}
+    width={typeof width == "number" ? width + "rem" : width}
+    height={typeof height == "number" ? height + "rem" : height}
     color={color}
     fill={"none"}
   >

@@ -5,8 +5,8 @@ import type { MouseEventHandler } from "react";
 import IconOptions, { LinkIconProps } from "@/app/types/IconOptions";
 
 const NaverIcon = ({
-  width = "5rem",
-  height = "5rem",
+  width = 5,
+  height = 5,
   className,
   to = "#",
   onClick,
@@ -27,8 +27,8 @@ const NaverIcon = ({
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 50 50"
-      width={width}
-      height={height}
+      width={typeof width == "number" ? width + "rem" : width}
+      height={typeof height == "number" ? height + "rem" : height}
       fill="none"
       className={className}
       onClick={handleClick}

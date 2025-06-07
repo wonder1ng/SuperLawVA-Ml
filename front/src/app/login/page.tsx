@@ -43,7 +43,7 @@ function StartPage() {
   };
   return (
     <>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full flex flex-col justify-center items-center">
+      <div className="h-20 w-full flex flex-col justify-center items-center">
         <StatusIcon className="mt-[1.4rem]" />
       </div>
       <BackHeader />

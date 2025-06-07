@@ -18,7 +18,7 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon: Icon, label }) => {
 
   return (
     <Link href={to} className="flex flex-col items-center gap-1">
-      <Icon width={24} height={24} color={color} />
+      <Icon width={2.4} height={2.4} color={color} />
       <span className={`text-[1.2rem]`} style={{ color }}>
         {label}
       </span>
@@ -36,7 +36,7 @@ const BottomNav = () => {
   if (!isClient) return null;
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md h-20 border-t border-[#F7F9FB] bg-white pt-4 px-2 z-10">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[768px] h-28 border-t border-[#c6c6c8] bg-white pt-4 z-10 rounded-[50px]">
       <div className="flex justify-around items-center h-full">
         <NavBtn to="/main" icon={HomeIcon} label="홈" />
         <NavBtn to="/register" icon={ChatIcon} label="채팅" />

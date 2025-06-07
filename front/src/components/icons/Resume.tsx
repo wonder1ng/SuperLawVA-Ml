@@ -9,8 +9,8 @@ const ResumeIcon = ({
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
-    width={width + "rem"}
-    height={height + "rem"}
+    width={typeof width == "number" ? width + "rem" : width}
+    height={typeof height == "number" ? height + "rem" : height}
     color={color}
     fill="none"
     className={className}
