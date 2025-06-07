@@ -12,6 +12,7 @@ import { useState } from "react";
 import GoogleIcon from "@/components/icons/sns/Google";
 import NaverIcon from "@/components/icons/sns/Naver";
 import AppleIcon from "@/components/icons/sns/Apple";
+import BackHeader from "@/components/BackHeader";
 
 // 큰 제목 - 그라데이션 텍스트
 const GradientTitle = styled.span`
@@ -42,16 +43,10 @@ function StartPage() {
   };
   return (
     <>
-      <div className="flex flex-col justify-center items-center h-20">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full flex flex-col justify-center items-center">
         <StatusIcon className="mt-[1.4rem]" />
       </div>
-      <div className="mx-8 h-24 flex justify-center items-end relative">
-        <ArrowLeftIcon
-          width={"3rem"}
-          height={"3rem"}
-          className="relative -left-[16.8rem]"
-        />
-      </div>
+      <BackHeader />
       <main className="flex flex-col items-center mt-[3.6rem] mx-8">
         <div className="flex flex-col text-center text-main font-sans">
           <div className="font-bold text-[4rem] leading-[120%] ">Super</div>

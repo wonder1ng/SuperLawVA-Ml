@@ -16,7 +16,7 @@ function StartPage() {
   };
   return (
     <>
-      <div className="flex flex-col justify-center items-center h-20">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full flex flex-col justify-center items-center">
         <StatusIcon className="mt-[1.4rem]" />
       </div>
       <BackHeader to="login">회원가입</BackHeader>
