@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { MouseEventHandler } from "react";
 
 interface SubmitButtonProps {
   width?: number | string;
@@ -15,6 +15,7 @@ interface SubmitButtonProps {
   icon?: React.ReactNode;
   className?: string;
   subStyle?: boolean;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }
 
 export default function SubmitButton({
@@ -29,6 +30,7 @@ export default function SubmitButton({
   children,
   icon,
   className,
+  onClick,
   subStyle = false,
 }: SubmitButtonProps) {
   const baseColor = background || "#5046E5";
@@ -45,10 +47,17 @@ export default function SubmitButton({
     ? "#5046E5"
     : fontColor || "#ffffff";
 
+  // const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+  //   if (onClick) {
+  //     onClick(e); // 외부 핸들러 실행
+  //   }
+  // };
+
   return (
     <button
       className={`flex justify-center items-center rounded-full transition-all duration-200 ${className}`}
       disabled={disabled}
+      onClick={onClick}
       style={{
         width: typeof width === "number" ? `${width}rem` : width,
         height: typeof height === "number" ? `${height}rem` : height,
