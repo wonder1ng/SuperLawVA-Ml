@@ -16,11 +16,11 @@ function StartPage() {
   };
   return (
     <>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full flex flex-col justify-center items-center">
+      <div className="h-20 w-full flex flex-col justify-center items-center">
         <StatusIcon className="mt-[1.4rem]" />
       </div>
       <BackHeader to="login">회원가입</BackHeader>
-      <main className="flex flex-col items-center mt-[5rem] mx-8 h-[calc(100%-14rem)]">
+      <main className="flex flex-col items-center mt-[5rem] mx-8 h-[calc(100%-13rem)]">
         <div className="mt-12 flex flex-col gap-8">
           <div className="flex gap-4">
             <StyledInput
@@ -69,7 +69,7 @@ function StartPage() {
             onChange={(e) => setEmailValue(e.target.value)}
           />
         </div>
-        <div className="bg-mainL mt-16 p-12 w-[36rem] h-80 justify-center rounded-[50px] flex flex-col gap-4">
+        <div className="bg-mainL mt-16 p-12 w-[36rem] justify-center rounded-[50px] flex flex-col gap-4">
           <div className="flex mb-4 gap-4 items-center">
             <input type="checkbox" name="" id="" className="w-6 h-6" />
             <label htmlFor="" className="text-[1.8rem] font-bold">
