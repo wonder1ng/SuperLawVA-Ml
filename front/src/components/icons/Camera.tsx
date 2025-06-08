@@ -21,13 +21,13 @@ const CameraIcon = ({
       height="12"
       rx="1"
       stroke={color}
-      stroke-width="2"
+      strokeWidth="2"
     />
     <circle cx="10" cy="9" r="2.5" stroke={color} />
     <path
       d="M4 3V2C4 1.44772 4.44772 1 5 1H6C6.55228 1 7 1.44772 7 2V3"
       stroke={color}
-      stroke-linecap="round"
+      strokeLinecap="round"
     />
   </svg>
 );
