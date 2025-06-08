@@ -11,6 +11,10 @@ interface NavBtnProps {
   label: string;
 }
 
+interface BottomNavProps {
+  mainBackGroundColor?: string;
+}
+
 const NavBtn: React.FC<NavBtnProps> = ({ to, icon: Icon, label }) => {
   const pathname = usePathname();
   const isActive = pathname === to;
@@ -26,21 +30,27 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon: Icon, label }) => {
   );
 };
 
-const BottomNav = () => {
+const BottomNav: React.FC<BottomNavProps> = ({ mainBackGroundColor }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
   if (!isClient) return null;
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[768px] h-28 border-t border-[#c6c6c8] bg-white pt-4 z-10 rounded-[50px]">
-      <div className="flex justify-around items-center h-full">
-        <NavBtn to="/main" icon={HomeIcon} label="홈" />
-        <NavBtn to="/register" icon={ChatIcon} label="채팅" />
-        <NavBtn to="/start" icon={UserIcon} label="내 정보" />
+    <nav
+      className="sticky -bottom-0 w-full h-28"
+      style={{
+        backgroundColor: mainBackGroundColor || "white", // ✅ 안전하게 처리
+      }}
+    >
+      <div className="h-full border-t border-[#c6c6c8] bg-white pt-4 z-10 rounded-t-[50px]">
+        <div className="flex justify-around items-center h-full">
+          <NavBtn to="/main" icon={HomeIcon} label="홈" />
+          <NavBtn to="/register" icon={ChatIcon} label="채팅" />
+          <NavBtn to="/start" icon={UserIcon} label="내 정보" />
+        </div>
       </div>
     </nav>
   );

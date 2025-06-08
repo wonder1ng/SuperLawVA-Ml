@@ -11,14 +11,14 @@ import BottomNav from "@/components/BottomNav";
 import ResumeIcon from "@/components/icons/Resume";
 import DocumentIcon from "@/components/icons/Document";
 import AnalyzeIcon from "@/components/icons/Analyze";
-import CertificateIcon from "@/components/icons/CertificateIcon";
+import InfoIcon from "@/components/icons/Info";
 import UploadIcon from "@/components/icons/Upload";
 
 interface QuickButtonProps {
   bgc: string;
   icon: React.ReactNode;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
 }
 
 function QuickButton({ bgc, icon, title, description }: QuickButtonProps) {
@@ -45,7 +45,7 @@ function StartPage() {
         <StatusIcon className="w-full mt-[1.4rem]" />
       </div>
       <header className="w-full flex justify-center items-center h-24">
-        <div className="w-[36rem] bg-white border border-inputBox rounded-[50px] flex justify-between items-center p-8 mx-6 gap-4">
+        <div className="w-full bg-white border border-inputBox rounded-[50px] flex justify-between items-center p-8 mx-6 gap-4">
           <span className="flex gap-3">
             <img src="logo.svg" className="w-12" alt="" />
             <span className="font-pretendard font-semibold text-[2rem] leading-[120%] tracking-[-0.04em] bg-gradient-to-r from-[#6000FF] to-[#E100FF] bg-clip-text text-transparent">
@@ -58,8 +58,7 @@ function StartPage() {
           </span>
         </div>
       </header>
-      <main className="w-full flex flex-col items-center h-[calc(100%-13rem]">
-        {/* <main className="w-full flex flex-col items-center"> */}
+      <main className="w-full flex flex-col items-center h-auto">
         <div className="self-start mx-16 my-20 text-[2rem] font-bold">
           아무개 님의 고민
           <br />'<span className="text-main2">로바</span>'에서 도와드릴게요!
@@ -98,7 +97,7 @@ function StartPage() {
               />
               <QuickButton
                 bgc="#ff453a"
-                icon={<CertificateIcon color="white" />}
+                icon={<InfoIcon color="white" />}
                 title="내용증명"
                 description="문제가 발생했어요"
               />
@@ -127,6 +126,51 @@ function StartPage() {
               >
                 바로가기
               </SubmitButton>
+              <div className="flex items-center gap-4 py-4 px-8 w-full border-[1.5px] border-[#c6c6c8] rounded-[20px] text-[1.2rem] font-medium">
+                <QuickButton
+                  bgc="rgba(96, 0, 255, 0.5)"
+                  icon={<DocumentIcon />}
+                />
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-[0.2rem] text-[#737373] text-[0.8rem] font-medium">
+                    <span className="text-[1.2rem] text-black">
+                      월세 임대차 계약서
+                    </span>
+                    <span className="text-[1rem]">
+                      서울시 강남구 테헤란로 123
+                    </span>
+                    <span>2025.03.22 등록</span>
+                    <div className="flex justify-between">
+                      <span>보증금: 5000만 원</span>
+                      <span>월세: 28만 원</span>
+                    </div>
+                  </div>
+                  <SubmitButton
+                    width={4}
+                    height={2}
+                    fontSize={0.8}
+                    fontWeight={500}
+                    fontColor="#3c82f6"
+                    borderRadius={"50px"}
+                    background="#eff6ff"
+                    borderColor="#3c82f6"
+                  >
+                    진행중
+                  </SubmitButton>
+                </div>
+              </div>
+              <SubmitButton
+                width={10}
+                height={3}
+                fontSize={1}
+                fontWeight={500}
+                fontColor="#6000FF"
+                borderRadius={"50px"}
+                background="#ffffff"
+                borderColor="#6000FF"
+              >
+                추가하기
+              </SubmitButton>
             </div>
           </div>
           <div className="self-start w-full font-semibold text-[1.8rem] px-8 flex flex-col gap-4">
@@ -148,6 +192,18 @@ function StartPage() {
                   <div className="text-subText">2025년 6월 6일 화요일</div>
                 </span>
               </div>
+              <SubmitButton
+                width={10}
+                height={3}
+                fontSize={1}
+                fontWeight={500}
+                fontColor="#6000FF"
+                borderRadius={"50px"}
+                background="#ffffff"
+                borderColor="#6000FF"
+              >
+                자세히 보기
+              </SubmitButton>
             </div>
           </div>
         </div>

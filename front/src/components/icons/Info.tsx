@@ -1,6 +1,6 @@
 import IconOptions from "@/app/types/IconOptions";
 
-const CertificateIcon = ({
+const InfoIcon = ({
   width = 2,
   height = 2,
   color = "#ffffff",
@@ -21,4 +21,4 @@ const CertificateIcon = ({
   </svg>
 );
 
-export default CertificateIcon;
+export default InfoIcon;
