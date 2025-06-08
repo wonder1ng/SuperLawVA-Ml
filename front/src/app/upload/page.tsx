@@ -40,7 +40,7 @@ function StartPage() {
         <img
           src="/uploadPage.png"
           alt="Main Icon"
-          className="w-[26.2rem] h-[28.2rem] mt-16"
+          className="w-[26.5rem] h-[26.5rem] mt-16"
         />
         <div className="mt-16 text-center text-[1.2rem] font-medium">
           당신의 계약서는 안전해야 하니까.
