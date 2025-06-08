@@ -1,17 +1,6 @@
 "use client";
 
-import React from "react";
-
-interface Props {
-  width?: number | string;
-  fontWeight?: number | string;
-  fontSize?: number | string;
-  type?: string;
-  className?: string;
-  placeholder?: string;
-  value?: string | number;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
+import { StyledInputProps } from "@/app/types/CustomStyledProps";
 
 export default function TailwindInput({
   width = "32rem",
@@ -22,7 +11,7 @@ export default function TailwindInput({
   placeholder,
   value,
   onChange,
-}: Props) {
+}: StyledInputProps) {
   return (
     <div className={`flex flex-col justify-start ${className}`}>
       <input

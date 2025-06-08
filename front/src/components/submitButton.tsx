@@ -1,24 +1,6 @@
 "use client";
 
-import React, { MouseEventHandler } from "react";
-
-interface SubmitButtonProps {
-  width?: number | string;
-  height?: number | string;
-  fontColor?: string;
-  fontSize?: number;
-  fontWeight?: number;
-  gap?: number;
-  background?: string;
-  borderColor?: string;
-  borderRadius?: number | string;
-  children?: React.ReactNode;
-  disabled?: boolean;
-  icon?: React.ReactNode;
-  className?: string;
-  subStyle?: boolean;
-  onClick?: MouseEventHandler<HTMLButtonElement>;
-}
+import CustomStyledProps from "@/app/types/CustomStyledProps";
 
 export default function SubmitButton({
   width = 20,
@@ -36,7 +18,7 @@ export default function SubmitButton({
   borderColor,
   onClick,
   subStyle = false,
-}: SubmitButtonProps) {
+}: CustomStyledProps) {
   const buttonBg = disabled
     ? "rgba(128, 128, 128, 0.55)"
     : subStyle
