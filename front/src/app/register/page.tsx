@@ -20,7 +20,7 @@ function StartPage() {
         <StatusIcon className="mt-[1.4rem]" />
       </div>
       <BackHeader to="login">회원가입</BackHeader>
-      <main className="flex flex-col items-center mt-[5rem] mx-8 h-[calc(100%-13rem)]">
+      <main className="flex flex-col items-center mt-[5rem] mx-8 h-auto">
         <div className="mt-12 flex flex-col gap-8">
           <div className="flex gap-4">
             <StyledInput
@@ -98,7 +98,7 @@ function StartPage() {
             </label>
           </div>
         </div>
-        <div className="flex flex-1 items-end mb-24">
+        <div className="flex flex-1 items-end mt-28 mb-8">
           <SubmitButton disabled={true}>가입하기</SubmitButton>
         </div>
       </main>
