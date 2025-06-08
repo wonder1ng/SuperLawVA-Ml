@@ -38,7 +38,7 @@ function StartPage() {
           소중하니까
         </div>
         <img
-          src="uploadPage.png"
+          src="/uploadPage.png"
           alt="Main Icon"
           className="w-[26.2rem] h-[28.2rem] mt-16"
         />
