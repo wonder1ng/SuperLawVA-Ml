@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import type { MouseEventHandler } from "react";
 import IconOptions, { LinkIconProps } from "@/app/types/IconOptions";
 
-const ArrowLeftIcon = ({
+const ArrowRightIcon = ({
   width = 1.5,
   height = 1.5,
   color = "#000000",
@@ -42,7 +42,7 @@ const ArrowLeftIcon = ({
       style={{ cursor: "pointer" }}
     >
       <path
-        d="M8.5 12.5018L1 6.75092L8.5 1"
+        d="M1 12.5018L8.5 6.75092L1 1"
         stroke={color}
         strokeWidth="2"
         strokeLinecap="round"
@@ -52,4 +52,4 @@ const ArrowLeftIcon = ({
   );
 };
 
-export default ArrowLeftIcon;
+export default ArrowRightIcon;

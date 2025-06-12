@@ -2,9 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import SubmitButton from "@/components/SubmitButton";
 import styled from "styled-components";
-import ArrowLeftIcon from "@/components/icons/ArrowLeft";
 import StatusIcon from "@/components/icons/Status";
 import KakaoIcon from "@/components/icons/sns/Kakao";
 import StyledInput from "@/components/StyledInput";
@@ -13,6 +11,7 @@ import GoogleIcon from "@/components/icons/sns/Google";
 import NaverIcon from "@/components/icons/sns/Naver";
 import AppleIcon from "@/components/icons/sns/Apple";
 import BackHeader from "@/components/BackHeader";
+import SubmitButton from "@/components/SubmitButton";
 
 // 큰 제목 - 그라데이션 텍스트
 const GradientTitle = styled.span`
