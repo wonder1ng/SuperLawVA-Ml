@@ -14,13 +14,13 @@ export default function StyledDiv({
   borderColor,
   children,
   icon,
-  className,
+  className = "flex justify-center items-center",
 }: CustomStyledProps) {
   const border = borderColor ? "0.15rem solid " + borderColor : "none";
 
   return (
-    <button
-      className={`flex justify-center items-center transition-all duration-200 ${className}`}
+    <div
+      className={className}
       style={{
         width: typeof width === "number" ? `${width}rem` : width,
         height: typeof height === "number" ? `${height}rem` : height,
@@ -31,12 +31,11 @@ export default function StyledDiv({
         fontSize: typeof fontSize === "number" ? `${fontSize}rem` : fontSize,
         borderRadius:
           typeof borderRadius === "number" ? `${borderRadius}px` : borderRadius,
-        lineHeight: "2.6rem",
         gap: typeof gap === "number" ? `${gap}rem` : gap,
       }}
     >
       {icon && <span>{icon}</span>}
       {children}
-    </button>
+    </div>
   );
 }
