@@ -1,6 +1,14 @@
-.env
-logs/
+# 백엔드 전용 무시
 *.log
+logs/
 
-build/
+# 빌드 산출물
+/build/
 
+# 환경변수 파일 (java-dotenv 용)
+.env
+
+# IntelliJ 설정
+.idea/
+*.iml
+out/
