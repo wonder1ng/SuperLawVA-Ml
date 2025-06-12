@@ -1,216 +1,174 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import SubmitButton from "@/components/SubmitButton";
-import StatusIcon from "@/components/icons/Status";
+import Image from "next/image";
 import StyledInput from "@/components/StyledInput";
-import { useEffect, useState } from "react";
-import BackHeader from "@/components/BackHeader";
+import { useState } from "react";
 import AlarmIcon from "@/components/icons/Alarm";
-import BottomNav from "@/components/BottomNav";
-import ResumeIcon from "@/components/icons/Resume";
 import DocumentIcon from "@/components/icons/Document";
 import AnalyzeIcon from "@/components/icons/Analyze";
 import InfoIcon from "@/components/icons/Info";
 import UploadIcon from "@/components/icons/Upload";
+import BottomNav from '@/components/BottomNav';
 
 interface QuickButtonProps {
   bgc: string;
   icon: React.ReactNode;
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
 }
 
 function QuickButton({ bgc, icon, title, description }: QuickButtonProps) {
   return (
-    <div className="flex flex-col items-center text-center">
-      <button
-        className="flex justify-center items-center w-20 h-20 rounded-[20px] mb-2"
+    <div className="flex flex-col items-center gap-2">
+      <div
+        className="w-[60px] h-[60px] rounded-[20px] flex items-center justify-center"
         style={{ backgroundColor: bgc }}
       >
-        {icon && <span>{icon}</span>}
-      </button>
-      <div className="text-base font-semibold">{title}</div>
-      <span className="text-[0.8rem] text-subText">{description}</span>
+        {icon}
+      </div>
+      <div className="text-[12px] text-[#000000] font-semibold">{title}</div>
+      <div className="text-[10px] text-[#4E4E4E] font-regular">{description}</div>
     </div>
   );
 }
+
 function StartPage() {
   const router = useRouter();
   const [emailValue, setEmailValue] = useState("");
 
   return (
-    <>
-      <div className="h-20 w-full flex flex-col justify-center items-center">
-        <StatusIcon className="w-full mt-[1.4rem]" />
-      </div>
-      <header className="w-full flex justify-center items-center h-24">
-        <div className="w-full bg-white border border-inputBox rounded-[50px] flex justify-between items-center p-8 mx-6 gap-4">
-          <span className="flex gap-3">
-            <img src="logo.svg" className="w-12" alt="" />
-            <span className="font-pretendard font-semibold text-[2rem] leading-[120%] tracking-[-0.04em] bg-gradient-to-r from-[#6000FF] to-[#E100FF] bg-clip-text text-transparent">
-              Super LawVA
-            </span>
-          </span>
-          <span className="flex gap-[2.4rem]">
+    <div className="w-full relative bg-[#f2f1f6] min-h-screen overflow-hidden">
+      <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-[56px] pb-4">
+        <div className="relative w-[360px] h-[60px] text-left text-[20px] font-pretendard">
+          <div className="absolute top-0 left-0 rounded-[50px] bg-white border border-[#f3f4f6] box-border w-[360px] h-[60px] backdrop-blur-[4px]" />
+          <div className="absolute top-[calc(50%-13px)] left-[calc(50%-160px)] w-[200px] h-[24px] flex items-center gap-3">
+            <Image
+              src="/lovalogo.svg"
+              alt="Super Lawva Logo"
+              width={24}
+              height={12}
+              className="object-contain"
+            />
+            <div className="tracking-[-0.04em] leading-[120%] font-semibold bg-gradient-to-r from-[#6000ff] to-[#e100ff] bg-clip-text text-transparent whitespace-nowrap">
+              Super Lawva
+            </div>
+          </div>
+          <div className="absolute top-[18px] left-[316px] rounded-full bg-[#6000ff] w-[24px] h-[24px]" />
+          <div className="absolute top-[20px] left-[276px]">
             <AlarmIcon />
-            <span className="w-[2.4rem] h-[2.4rem] rounded-full bg-main2"></span>
-          </span>
+          </div>
         </div>
-      </header>
-      <main className="w-full flex flex-col items-center h-auto">
-        <div className="self-start mx-16 my-20 text-[2rem] font-bold">
+      </div>
+
+      <main className="w-full flex flex-col items-center pt-[140px] h-screen overflow-y-auto">
+        <div className="self-start mx-9 text-[20px] font-bold text-black mb-[30px]">
           아무개 님의 고민
-          <br />'<span className="text-main2">로바</span>'에서 도와드릴게요!
+          <br />'<span className="text-[#6000ff]">로바</span>'에서 도와드릴게요!
         </div>
-        <div className="w-full px-8 gap-12 rounded-t-[50px] bg-white flex flex-col items-center">
-          <div className="w-full h-[4.4rem] bg-inputBox rounded-[50px] text-subText text-[1.4rem] flex items-center justify-between mt-10 pl-6 pr-4">
-            <div className="flex gap-4">
-              <AlarmIcon />
-              무엇을 도와드릴까요?
-            </div>
-            <SubmitButton
-              width={7}
-              height={3}
-              fontSize={1.2}
-              fontWeight={500}
-              borderRadius={50}
-              background="#6000FF"
-            >
-              검색
-            </SubmitButton>
-          </div>
-          <div className="self-start w-full font-semibold text-[1.8rem] px-8 flex flex-col gap-4">
-            빠른 작업
-            <div className="flex w-full justify-around text-[1.2rem]">
-              <QuickButton
-                bgc="#32d74b"
-                icon={<DocumentIcon />}
-                title="계약서 작성"
-                description="안전한 계약을 원해요"
-              />
-              <QuickButton
-                bgc="#0a84ff"
-                icon={<AnalyzeIcon color="white" />}
-                title="계약서 분석"
-                description="계약을 검토하고 싶어요"
-              />
-              <QuickButton
-                bgc="#ff453a"
-                icon={<InfoIcon color="white" />}
-                title="내용증명"
-                description="문제가 발생했어요"
-              />
-            </div>
-          </div>
-          <div className="self-start w-full font-semibold text-[1.8rem] px-8 flex flex-col gap-4">
-            내 계약서
-            <div className="flex flex-col justify-center items-center gap-4">
-              <div className="flex flex-col gap-4 py-4 justify-center items-center w-full border-[1.5px] border-[#c6c6c8] rounded-[20px] text-[1.2rem] font-medium">
-                <UploadIcon />
-                <span>계약서 업로드</span>
-                <span className="text-[0.8rem] font-medium text-subText">
-                  PDF, 이미지 또는 문서를 업로드하세요
-                </span>
-              </div>
-              <span className="text-main2 text-[1rem]">
-                서비스를 이용하려면 파일을 업로드해주세요!
-              </span>
-              <SubmitButton
-                width={10}
-                height={3}
-                fontSize={1}
-                fontWeight={500}
-                borderRadius={"50px"}
-                background="#6000FF"
-              >
-                바로가기
-              </SubmitButton>
-              <div className="flex items-center gap-4 py-4 px-8 w-full border-[1.5px] border-[#c6c6c8] rounded-[20px] text-[1.2rem] font-medium">
-                <QuickButton
-                  bgc="rgba(96, 0, 255, 0.5)"
-                  icon={<DocumentIcon />}
-                />
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-[0.2rem] text-[#737373] text-[0.8rem] font-medium">
-                    <span className="text-[1.2rem] text-black">
-                      월세 임대차 계약서
-                    </span>
-                    <span className="text-[1rem]">
-                      서울시 강남구 테헤란로 123
-                    </span>
-                    <span>2025.03.22 등록</span>
-                    <div className="flex justify-between">
-                      <span>보증금: 5000만 원</span>
-                      <span>월세: 28만 원</span>
-                    </div>
-                  </div>
-                  <SubmitButton
-                    width={4}
-                    height={2}
-                    fontSize={0.8}
-                    fontWeight={500}
-                    fontColor="#3c82f6"
-                    borderRadius={"50px"}
-                    background="#eff6ff"
-                    borderColor="#3c82f6"
-                  >
-                    진행중
-                  </SubmitButton>
+
+        <div className="w-full">
+          <div className="w-full h-[692px] rounded-t-[50px] bg-white/70 border border-[#f3f4f6]">
+            <div className="w-full px-6 pt-6">
+              <div className="relative w-[342px] h-[44px] mx-auto">
+                <div className="absolute top-0 left-0 w-[342px] h-[44px] rounded-[43.5px] bg-[#f3f4f6]" />
+                <div className="absolute top-[7px] left-[262px] w-[70px] h-[30px] rounded-[43.5px] bg-[#6000ff]" />
+                <div className="absolute top-[16px] left-[286px] text-[12px] leading-[100%] font-medium text-white font-['Noto_Sans_KR']">
+                  검색
+                </div>
+                <div className="absolute top-[15px] left-[32px] text-[14px] leading-[100%] font-medium text-[#9ca3af] font-pretendard">
+                  무엇을 도와드릴까요?
+                </div>
+                <div className="absolute top-[15px] left-[12px]">
+                  <Image
+                    src="/search.svg"
+                    alt="Search"
+                    width={14}
+                    height={14}
+                    className="object-contain"
+                  />
                 </div>
               </div>
-              <SubmitButton
-                width={10}
-                height={3}
-                fontSize={1}
-                fontWeight={500}
-                fontColor="#6000FF"
-                borderRadius={"50px"}
-                background="#ffffff"
-                borderColor="#6000FF"
-              >
-                추가하기
-              </SubmitButton>
-            </div>
-          </div>
-          <div className="self-start w-full font-semibold text-[1.8rem] px-8 flex flex-col gap-4">
-            최근 활동
-            <div className="flex flex-col justify-center items-center gap-4">
-              <div className="flex py-4 justify-between items-center w-full border-[1.5px] border-[#c6c6c8] rounded-[20px] px-[1.5rem]">
-                <span className="flex items-center gap-4">
-                  <AnalyzeIcon color="#0a84ff" />
-                  <div>
-                    <div className="text-[1.2rem] font-medium">계약서 분석</div>
-                    <div className="text-[#7f7f7f] text-[1rem]">
-                      {/* <div className="text-subText"> */}
-                      전세 임대차 계약서 분석
+
+              <div className="w-full px-9 mt-[30px]">
+                <div className="text-[18px] font-semibold text-black mb-[30px]">빠른 작업</div>
+                <div className="relative w-[311px] h-[91px] mx-auto">
+                  <div className="absolute top-0 left-[117px] w-[74px] h-[91px]">
+                    <div className="absolute top-0 left-[7px] w-[60px] h-[60px] rounded-[20px] bg-[#0a84ff] flex items-center justify-center">
+                      <AnalyzeIcon color="white" />
+                    </div>
+                    <div className="absolute top-[66px] left-[calc(50%-27px)] text-[12px] font-semibold text-black text-center w-[55px] leading-[110%] whitespace-nowrap">
+                      계약서 분석
+                    </div>
+                    <div className="absolute top-[82px] left-[calc(50%-37px)] text-[8px] text-[#4e4e4e] text-center w-[74px] leading-[110%] whitespace-nowrap">
+                      계약을 검토하고 싶어요
                     </div>
                   </div>
-                </span>
-                <span className="text-[0.8rem]">
-                  <div className="text-main2">자세히 보기 &gt;</div>
-                  <div className="text-subText">2025년 6월 6일 화요일</div>
-                </span>
+                  <div className="absolute top-0 left-[240px] w-[60px] h-[91px]">
+                    <div className="absolute top-0 left-0 w-[60px] h-[60px] rounded-[20px] bg-[#ff453a] flex items-center justify-center">
+                      <InfoIcon color="white" />
+                    </div>
+                    <div className="absolute top-[66px] left-[9px] text-[12px] font-semibold text-black text-center w-[42px] leading-[110%] whitespace-nowrap">
+                      내용증명
+                    </div>
+                    <div className="absolute top-[82px] left-[1px] text-[8px] text-[#4e4e4e] text-center w-[58px] leading-[110%] whitespace-nowrap">
+                      문제가 발생했어요
+                    </div>
+                  </div>
+                  <div className="absolute top-0 left-0 w-[67px] h-[91px]">
+                    <div className="absolute top-0 left-[3px] w-[60px] h-[60px] rounded-[20px] bg-[#32d74b] flex items-center justify-center">
+                      <DocumentIcon />
+                    </div>
+                    <div className="absolute top-[66px] left-[6px] text-[12px] font-semibold text-black text-center w-[55px] leading-[110%] whitespace-nowrap">
+                      계약서 작성
+                    </div>
+                    <div className="absolute top-[82px] left-0 text-[8px] text-[#4e4e4e] text-center w-[67px] leading-[110%] whitespace-nowrap">
+                      안전한 계약을 원해요
+                    </div>
+                  </div>
+                </div>
               </div>
-              <SubmitButton
-                width={10}
-                height={3}
-                fontSize={1}
-                fontWeight={500}
-                fontColor="#6000FF"
-                borderRadius={"50px"}
-                background="#ffffff"
-                borderColor="#6000FF"
-              >
-                자세히 보기
-              </SubmitButton>
+
+              <div className="w-full px-9 mt-[30px]">
+                <div className="text-[18px] font-semibold text-black mb-[30px]">내 계약서</div>
+                <div className="relative w-[286px] h-[60px] mx-auto">
+                  <div className="absolute top-0 left-0 w-full h-full rounded-[20px] bg-[#780aff] flex flex-col items-center justify-center">
+                    <UploadIcon width={1.2} height={1.4} color="white" className="mb-1" />
+                    <span className="text-[12px] font-semibold text-white whitespace-nowrap">계약서 업로드</span>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <span className="text-[10px] font-medium bg-gradient-to-r from-[#6000ff]/70 to-[#e100ff]/70 bg-clip-text text-transparent whitespace-nowrap">
+                    서비스를 이용하려면 파일을 업로드해주세요!
+                  </span>
+                </div>
+              </div>
+
+              <div className="w-full px-9 mt-[30px]">
+                <div className="text-[18px] font-semibold text-black mb-[30px]">최근 상담 내용</div>
+                <div className="flex flex-col justify-center items-center gap-4">
+                  <div className="flex flex-col justify-center items-center gap-4 opacity-70">
+                    <Image
+                      src="/chatbot.png"
+                      alt="No recent consultations"
+                      width={101}
+                      height={101}
+                      className="object-contain"
+                    />
+                    <span className="text-[12px] font-medium text-black">
+                      최근 상담 내용이 없어요
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div className="h-36 w-full bg-white" />
       </main>
-      <BottomNav></BottomNav>
-    </>
+
+      {/* 하단 네비게이션 바 */}
+      <BottomNav />
+    </div>
   );
 }
 
