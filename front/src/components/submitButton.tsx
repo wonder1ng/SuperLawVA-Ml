@@ -14,7 +14,7 @@ export default function SubmitButton({
   disabled = false,
   children,
   icon,
-  className,
+  className = "flex justify-center items-center",
   borderColor,
   onClick,
   subStyle = false,
@@ -45,7 +45,7 @@ export default function SubmitButton({
 
   return (
     <button
-      className={`flex justify-center items-center transition-all duration-200 ${className}`}
+      className={className}
       disabled={disabled}
       onClick={onClick}
       style={{
@@ -58,7 +58,6 @@ export default function SubmitButton({
         fontSize: typeof fontSize === "number" ? `${fontSize}rem` : fontSize,
         borderRadius:
           typeof borderRadius === "number" ? `${borderRadius}px` : borderRadius,
-        lineHeight: "2.6rem",
         gap: typeof gap === "number" ? `${gap}rem` : gap,
         cursor: disabled ? "not-allowed" : "pointer",
         pointerEvents: disabled ? "none" : "auto",
