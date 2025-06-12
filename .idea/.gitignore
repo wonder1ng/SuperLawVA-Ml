@@ -6,3 +6,17 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+
+# 환경 변수 파일
+.env
+back/.env
+
+# IntelliJ IDEA
+/.idea/
+/*.iml
+modules.xml
+workspace.xml
+
+# Gradle-wrapper 캐시 등 (이미 있는 경우 중복 무관)
+/.gradle/
+/build/

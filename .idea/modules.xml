@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/SuperLawVA.iml" filepath="$PROJECT_DIR$/.idea/SuperLawVA.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.superlawva.SuperLawVA.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.superlawva.SuperLawVA.main.iml" />
     </modules>
   </component>
 </project>
