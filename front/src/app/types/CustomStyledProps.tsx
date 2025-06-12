@@ -21,6 +21,8 @@ export default interface CustomStyledProps {
 export interface StyledInputProps extends CustomStyledProps {
   type?: string;
   placeholder?: string;
-  value?: string | number;
+  value?: number | string;
+  lineHeight?: number | string;
+  autoFocus?: boolean;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
