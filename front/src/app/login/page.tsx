@@ -3,6 +3,9 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import styled from "styled-components";
+import StatusIcon from "@/components/icons/Status";
+import KakaoIcon from "@/components/icons/sns/Kakao";
 import StyledInput from "@/components/StyledInput";
 import { useState } from "react";
 import KakaoIcon from "@/components/icons/sns/Kakao";
@@ -10,6 +13,21 @@ import GoogleIcon from "@/components/icons/sns/Google";
 import NaverIcon from "@/components/icons/sns/Naver";
 import AppleIcon from "@/components/icons/sns/Apple";
 import PasswordVisibilityIcon from "@/components/icons/PasswordVisibility";
+import BackHeader from "@/components/BackHeader";
+import SubmitButton from "@/components/SubmitButton";
+
+// 큰 제목 - 그라데이션 텍스트
+const GradientTitle = styled.span`
+  font-weight: 700;
+  font-size: 3rem;
+  line-height: 120%;
+
+  background: linear-gradient(180deg, #5046e5 50%, #9134eb 143.75%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+`;
 
 export default function LoginPage() {
   const router = useRouter();

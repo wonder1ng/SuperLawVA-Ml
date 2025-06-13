@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,13 @@ export const metadata: Metadata = {
   description: "Law Virtual Assistant",
 };
 
+const pretendard = localFont({
+  src: "fonts/PretendardVariable.woff2",
+  display: "swap",
+  weight: "45 920",
+  variable: "--font-pretendard",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,16 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased absolute top-0 left-1/2 -translate-x-1/2 w-full`}
+        // className={`${pretendard.variable} ${geistSans.variable} ${geistMono.variable} antialiased absolute top-0 left-1/2 -translate-x-1/2 w-full`}
+        className={`${pretendard.variable} ${geistSans.variable} ${geistMono.variable} antialiased w-full`}
       >
-        {children}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full">
+          {children}
+        </div>
       </body>
     </html>
   );

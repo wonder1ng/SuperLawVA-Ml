@@ -7,6 +7,7 @@ import DocumentIcon from "@/components/icons/Document";
 import MagicStarIcon from "@/components/icons/MagicStar";
 import PictureIcon from "@/components/icons/Picture";
 import Modal from "@/components/Modal";
+import StyledDiv from "@/components/StyledDiv";
 import SubmitButton from "@/components/SubmitButton";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -22,7 +23,7 @@ function StartPage() {
     <>
       <main className="flex flex-col items-center h-full bg-white">
         <div className="h-52 w-full" />
-        <SubmitButton
+        <StyledDiv
           width={15.2}
           height={3.4}
           background="#faf5ff"
@@ -31,16 +32,16 @@ function StartPage() {
           icon={<MagicStarIcon />}
         >
           <span className="text-good">AI로 계약서 관리하기</span>
-        </SubmitButton>
+        </StyledDiv>
         <div className="mt-8 text-center text-[2.6rem]/[3.1rem] font-bold">
           아무개 님의 문서는
           <br />
           소중하니까
         </div>
         <img
-          src="uploadPage.png"
+          src="/uploadPage.png"
           alt="Main Icon"
-          className="w-[26.2rem] h-[28.2rem] mt-16"
+          className="w-[26.5rem] h-[26.5rem] mt-16"
         />
         <div className="mt-16 text-center text-[1.2rem] font-medium">
           당신의 계약서는 안전해야 하니까.

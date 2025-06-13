@@ -1,24 +1,6 @@
 "use client";
 
-import React, { MouseEventHandler } from "react";
-
-interface SubmitButtonProps {
-  width?: number | string;
-  height?: number | string;
-  fontColor?: string;
-  fontSize?: number;
-  fontWeight?: number;
-  gap?: number;
-  background?: string;
-  borderColor?: string;
-  borderRadius?: number | string;
-  children?: React.ReactNode;
-  disabled?: boolean;
-  icon?: React.ReactNode;
-  className?: string;
-  subStyle?: boolean;
-  onClick?: MouseEventHandler<HTMLButtonElement>;
-}
+import CustomStyledProps from "@/app/types/CustomStyledProps";
 
 export default function SubmitButton({
   width = 20,
@@ -32,11 +14,11 @@ export default function SubmitButton({
   disabled = false,
   children,
   icon,
-  className,
+  className = "flex justify-center items-center",
   borderColor,
   onClick,
   subStyle = false,
-}: SubmitButtonProps) {
+}: CustomStyledProps) {
   const buttonBg = disabled
     ? "rgba(128, 128, 128, 0.55)"
     : subStyle
@@ -63,7 +45,7 @@ export default function SubmitButton({
 
   return (
     <button
-      className={`flex justify-center items-center transition-all duration-200 ${className}`}
+      className={className}
       disabled={disabled}
       onClick={onClick}
       style={{
@@ -76,7 +58,6 @@ export default function SubmitButton({
         fontSize: typeof fontSize === "number" ? `${fontSize}rem` : fontSize,
         borderRadius:
           typeof borderRadius === "number" ? `${borderRadius}px` : borderRadius,
-        lineHeight: "2.6rem",
         gap: typeof gap === "number" ? `${gap}rem` : gap,
         cursor: disabled ? "not-allowed" : "pointer",
         pointerEvents: disabled ? "none" : "auto",
