@@ -5,7 +5,7 @@ import CheckedIcon from "@/components/icons/Checked";
 import DocumentIcon from "@/components/icons/Document";
 import Modal from "@/components/Modal";
 import StyledDiv from "@/components/StyledDiv";
-import SubmitButton from "@/components/SubmitButton";
+import SubmitButton from "@/components/submitButton";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

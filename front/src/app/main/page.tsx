@@ -94,7 +94,10 @@ function StartPage() {
                 <div className="text-[18px] font-semibold text-black mb-[30px]">빠른 작업</div>
                 <div className="relative w-[311px] h-[91px] mx-auto">
                   <div className="absolute top-0 left-[117px] w-[74px] h-[91px]">
-                    <div className="absolute top-0 left-[7px] w-[60px] h-[60px] rounded-[20px] bg-[#0a84ff] flex items-center justify-center">
+                    <div 
+                      className="absolute top-0 left-[7px] w-[60px] h-[60px] rounded-[20px] bg-[#0a84ff] flex items-center justify-center cursor-pointer"
+                      onClick={() => router.push('/main/document')}
+                    >
                       <AnalyzeIcon color="white" />
                     </div>
                     <div className="absolute top-[66px] left-[calc(50%-27px)] text-[12px] font-semibold text-black text-center w-[55px] leading-[110%] whitespace-nowrap">
@@ -115,15 +118,18 @@ function StartPage() {
                       문제가 발생했어요
                     </div>
                   </div>
-                  <div className="absolute top-0 left-0 w-[67px] h-[91px]">
+                  <div 
+                    className="absolute top-0 left-0 w-[67px] h-[91px] cursor-pointer"
+                    onClick={() => router.push('/contract/create')}
+                  >
                     <div className="absolute top-0 left-[3px] w-[60px] h-[60px] rounded-[20px] bg-[#32d74b] flex items-center justify-center">
-                      <DocumentIcon />
+                      <DocumentIcon color="white" />
                     </div>
                     <div className="absolute top-[66px] left-[6px] text-[12px] font-semibold text-black text-center w-[55px] leading-[110%] whitespace-nowrap">
                       계약서 작성
                     </div>
                     <div className="absolute top-[82px] left-0 text-[8px] text-[#4e4e4e] text-center w-[67px] leading-[110%] whitespace-nowrap">
-                      안전한 계약을 원해요
+                      새로운 계약을 작성해요
                     </div>
                   </div>
                 </div>
@@ -132,7 +138,10 @@ function StartPage() {
               <div className="w-full px-9 mt-[30px]">
                 <div className="text-[18px] font-semibold text-black mb-[30px]">내 계약서</div>
                 <div className="relative w-[286px] h-[60px] mx-auto">
-                  <div className="absolute top-0 left-0 w-full h-full rounded-[20px] bg-[#780aff] flex flex-col items-center justify-center">
+                  <div 
+                    className="absolute top-0 left-0 w-full h-full rounded-[20px] bg-[#780aff] flex flex-col items-center justify-center cursor-pointer"
+                    onClick={() => router.push('/main/document')}
+                  >
                     <UploadIcon width={1.2} height={1.4} color="white" className="mb-1" />
                     <span className="text-[12px] font-semibold text-white whitespace-nowrap">계약서 업로드</span>
                   </div>
