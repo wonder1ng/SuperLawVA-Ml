@@ -26,7 +26,7 @@
   --color-yellowL: #fefce8;
   --color-green: #58ba72;
   --color-greenL: #dcfce7;
-  --font-sans: "Noto Sans KR";
+  --font-sans: "Pretendard";
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,10 +35,12 @@
     --foreground: #ededed;
   }
 }
+
 * {
   max-width: min(100svw, 100svh);
   outline: none;
 }
+
 html {
   margin: 0;
   padding: 0;
@@ -51,11 +53,12 @@ html {
   margin: none;
   padding: none;
 }
+
 body {
   background: var(--background);
   color: var(--foreground);
   height: 100%;
-  font-family: var(--font-pretendard), Arial, Helvetica, sans-serif;
+  font-family: var(--font-pretendard), sans-serif, Arial, Helvetica;
   background-color: #f7f9fb;
 }
 
@@ -67,6 +70,7 @@ svg {
   display: block;
   max-width: 100%;
 }
+
 input,
 button,
 textarea,
