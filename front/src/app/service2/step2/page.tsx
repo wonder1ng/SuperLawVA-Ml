@@ -1,191 +1,156 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
+import Step2Popup, { Step2PopupData } from "@/components/step2popup";
 
-// 데이터 타입 정의
-interface Law {
-  law_id: number;
-  law: string;
-}
-interface Case {
-  case_id: number;
-  case: string;
-}
-interface Article {
-  result: boolean;
-  content: string;
-  reason?: string;
-  suggested_revision?: string;
-  negotiation_points?: string;
-  legal_basis?: Law;
-  case_basis?: Case[];
-}
-interface Agreement extends Article {}
-interface RecommendedAgreement {
-  reason?: string;
-  suggested_revision: string;
-  negotiation_points?: string;
-  legal_basis?: Law;
-  case_basis?: Case[];
-}
-interface AnalysisMeta {
-  model: string;
-  generation_time: number;
-  user_agent: string;
-  version: string;
-}
-interface ContractAnalysisData {
-  _id: number;
-  user_id: number;
-  contract_id: number;
-  created_date: string;
-  articles: Article[];
-  agreements: Agreement[];
-  recommended_agreements: RecommendedAgreement[];
-  analysis_metadata?: AnalysisMeta;
-}
+const popupData: Step2PopupData[] = [
+  {
+    title: "제 1조(목적)",
+    period: "계약 기간은 2024년 1월 1일부터 2025년 12월 31일까지이다.",
+    reason: "계약 목적이 명확하지 않음.",
+    result: "계약 목적을 구체적으로 명시함.",
+    strategy: "계약 목적을 명확히 하여 분쟁 예방.",
+    laws: ["민법 제103조"],
+    precedents: ["대법원 2010다12345"]
+  },
+  {
+    title: "제 2조(존속기간)",
+    period: "계약 기간은 2024년 7월 1일부터 2026년 6월 30일까지이다.",
+    reason: "계약기간이 2년이 넘어가요.",
+    result: "계약 기간이 끝나기 전에 해지할 수 없음.",
+    strategy: "지연이자율을 명확히 하여 임차인의 예측 가능성 확보.",
+    laws: ["소득세법 시행령 제122조 제 1항"],
+    precedents: ["서울중앙법 2029가합18", "부산지법 1818가합18"]
+  },
+  {
+    title: "제 3조(용도 변경)",
+    period: "계약 기간은 2024년 3월 1일부터 2025년 2월 28일까지이다.",
+    reason: "용도 변경에 대한 제한이 없음.",
+    result: "용도 변경 시 사전 동의 필요.",
+    strategy: "용도 변경 조건을 명확히 하여 분쟁 예방.",
+    laws: ["상가건물 임대차보호법 제10조"],
+    precedents: ["대법원 2015다67890"]
+  },
+  // ... 필요시 더 추가
+];
 
-// 샘플 데이터 (없으면 안내)
-const sampleData: ContractAnalysisData = {
-  _id: 123,
-  user_id: 123,
-  contract_id: 123,
-  created_date: "2026-06-30T00:00:00Z",
-  articles: [
-    {
-      result: true,
-      content: "계약 기간은 2024년 7월 1일부터 2026년 6월 30일까지이다.",
-      reason: "임대인의 안정적 수익 보장.",
-      suggested_revision: "계약 기간이 끝나기 전에 해지할 수 없음.",
-      negotiation_points: "지연이자율을 명확히 하여 임차인의 예측 가능성 확보",
-      legal_basis: { law_id: 123, law: "「주택임대차보호법 시행령」 제22조" },
-      case_basis: [
-        { case_id: 123, case: "대법원 2019다12345 판결" },
-        { case_id: 124, case: "서울고등법원 2018나54321 판결" }
-      ]
-    }
-  ],
-  agreements: [
-    {
-      result: true,
-      content: "계약 기간은 2024년 7월 1일부터 2026년 6월 30일까지이다.",
-      reason: "임대인의 안정적 수익 보장.",
-      suggested_revision: "계약 기간이 끝나기 전에 해지할 수 없음.",
-      negotiation_points: "지연이자율을 명확히 하여 임차인의 예측 가능성 확보",
-      legal_basis: { law_id: 123, law: "「주택임대차보호법 시행령」 제22조" },
-      case_basis: [
-        { case_id: 123, case: "대법원 2019다12345 판결" },
-        { case_id: 124, case: "서울고등법원 2018나54321 판결" }
-      ]
-    }
-  ],
-  recommended_agreements: [
-    {
-      reason: "임대인의 안정적 수익 보장.",
-      suggested_revision: "계약 기간이 끝나기 전에 해지할 수 없음.",
-      negotiation_points: "지연이자율을 명확히 하여 임차인의 예측 가능성 확보",
-      legal_basis: { law_id: 123, law: "「주택임대차보호법 시행령」 제22조" },
-      case_basis: [
-        { case_id: 123, case: "대법원 2019다12345 판결" },
-        { case_id: 124, case: "서울고등법원 2018나54321 판결" }
-      ]
-    }
-  ],
-  analysis_metadata: {
-    model: "Claude Sonnet 4",
-    generation_time: 42.96,
-    user_agent: "Mozila",
-    version: "v1.2.3"
-  }
+const StatusIndicator = ({ status }: { status: "ok" | "check" }) => {
+  const color = status === "ok" ? "#32D74B" : "#FF9400";
+  return (
+    <span
+      className="w-3 h-3 rounded-full"
+      style={{ backgroundColor: color }}
+    />
+  );
 };
 
-const colorDot = (color: string) => (
-  <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', background: color, marginRight: 12, flexShrink: 0, boxShadow: '0 1px 2px #0001' }} />
+const BackTopIcon = ({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) => (
+  <img src="/back_top.svg" alt="back" className={className} style={style} draggable={false} />
 );
 
-export default function DataCheckPage({ data }: { data?: ContractAnalysisData }) {
-  const d = data || sampleData;
+const MoreDocIcon = ({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) => (
+  <img src="/more_doc.svg" alt="more" className={className} style={style} draggable={false} />
+);
+
+const ArticleItem = ({ title, status, onClick }: { title: string; status: "ok" | "check"; onClick: () => void }) => (
+  <div onClick={onClick} className="flex items-center w-[353px] h-[46px] bg-white/75 border border-[#f3f4f6] rounded-2xl px-5 mx-auto cursor-pointer">
+    <StatusIndicator status={status} />
+    <span className="ml-4 text-[14px] font-medium text-black/70">{title}</span>
+    <span className="ml-auto flex items-center">
+      <MoreDocIcon className="w-6 h-6 align-middle" />
+    </span>
+  </div>
+);
+
+export default function ContractAnalysisPage() {
+    const [popupIndex, setPopupIndex] = useState<number|null>(null);
+
+    const openPopup = (idx: number) => {
+        setPopupIndex(idx);
+    };
+    const closePopup = () => {
+        setPopupIndex(null);
+    };
+    const goPrev = () => {
+        if (popupIndex !== null && popupIndex > 0) setPopupIndex(popupIndex - 1);
+    };
+    const goNext = () => {
+        if (popupIndex !== null && popupIndex < popupData.length - 1) setPopupIndex(popupIndex + 1);
+    };
+
   return (
-    <div className="w-full min-h-screen bg-[#f7f7fa] flex flex-col items-center py-8 px-2">
-      {/* 실제 서비스 UI */}
-      <div className="w-full max-w-[430px] flex flex-col gap-6 mb-8">
-        {/* 계약 조항 전체 카드 */}
-        <div className="rounded-[28px] bg-white shadow-sm border border-[#f3f4f6] px-2 py-2">
-          <h2 className="text-[1.1rem] font-bold text-[#18181b] mb-3 pl-2 pt-2">계약 조항 전체</h2>
-          {d.articles.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between px-3 py-3 rounded-[18px] mb-1 hover:bg-[#f5f5fa] transition"
-              style={{ minHeight: 44 }}
-            >
-              <div className="flex items-center min-w-0">
-                {colorDot(item.result ? '#32D74B' : '#FF3B30')}
-                <span className="font-semibold text-[1.08rem] text-[#222] truncate" title={item.content}>{item.content}</span>
-              </div>
-              <button className="ml-2 p-1 rounded-full hover:bg-[#f2f2f7] transition" aria-label="상세보기">
-                <span className="text-[1.25rem]" role="img" aria-label="메모">🗒️</span>
-              </button>
+    <div className="w-[393px] h-[852px] mx-auto bg-[#f2f1f6] font-['Pretendard'] flex flex-col relative overflow-hidden">
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 h-[117px] z-20">
+        <div className="absolute inset-0 bg-white/20 backdrop-blur-sm" />
+        <div className="relative flex items-center h-full px-[24px] pb-[18px]" style={{gap:10}}>
+          <BackTopIcon className="w-6 h-6 min-w-[24px] min-h-[24px]" />
+          <h1 className="text-[16px] font-bold ml-3">계약서 분석 결과</h1>
+        </div>
+      </header>
+      
+      {/* Spacer for header */}
+      <div className="h-[117px] flex-shrink-0"/>
+
+      <main className="flex-grow flex flex-col">
+        {/* Status Legend */}
+        <div className="flex justify-center my-8">
+            <div className="flex items-center gap-6 bg-white/90 rounded-full px-5 py-3 text-sm shadow-sm border border-gray-200/80">
+                <div className="flex items-center gap-2">
+                    <StatusIndicator status="ok" />
+                    <span className="text-[#32D74B] text-[14px] font-medium tracking-tighter">-문제 없음</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <StatusIndicator status="check" />
+                    <span className="text-[#FF9400] text-[14px] font-medium tracking-tighter">-확인 필요</span>
+                </div>
             </div>
-          ))}
         </div>
-        {/* 특약사항 카드 */}
-        <div className="rounded-[28px] bg-white shadow-sm border border-[#f3f4f6] px-2 py-2">
-          <h2 className="text-[1.1rem] font-bold text-[#18181b] mb-3 pl-2 pt-2">특약사항</h2>
-          {d.agreements.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between px-3 py-3 rounded-[18px] mb-1 hover:bg-[#f5f5fa] transition"
-              style={{ minHeight: 44 }}
-            >
-              <div className="flex items-center min-w-0">
-                {colorDot(item.result ? '#32D74B' : '#FF3B30')}
-                <span className="font-semibold text-[1.08rem] text-[#222] truncate" title={item.content}>{item.content}</span>
-              </div>
-              <button className="ml-2 p-1 rounded-full hover:bg-[#f2f2f7] transition" aria-label="상세보기">
-                <span className="text-[1.25rem]" role="img" aria-label="메모">🗒️</span>
-              </button>
+
+        {/* Article List */}
+        <div className="flex-grow bg-white/70 rounded-t-[40px] border border-b-0 border-[#f3f4f6] pt-5 pb-24 overflow-hidden">
+            <div className="flex items-center justify-center mb-7">
+                <h2 className="text-[18px] font-semibold text-center">계약 조항 목록</h2>
             </div>
-          ))}
-        </div>
-        {/* 권고 특약 카드 */}
-        <div className="rounded-[28px] bg-white shadow-sm border border-[#f3f4f6] px-2 py-2">
-          <h2 className="text-[1.1rem] font-bold text-[#18181b] mb-3 pl-2 pt-2">권고 특약</h2>
-          {d.recommended_agreements.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between px-3 py-3 rounded-[18px] mb-1 hover:bg-[#f5f5fa] transition"
-              style={{ minHeight: 44 }}
-            >
-              <div className="flex items-center min-w-0">
-                {colorDot('#FF3B30')}
-                <span className="font-semibold text-[1.08rem] text-[#222] truncate" title={item.suggested_revision}>{item.suggested_revision}</span>
-              </div>
-              <button className="ml-2 p-1 rounded-full hover:bg-[#f2f2f7] transition" aria-label="상세보기">
-                <span className="text-[1.25rem]" role="img" aria-label="메모">🗒️</span>
-              </button>
+            <div className="h-full overflow-y-auto space-y-3 pb-8">
+                {popupData.map((article, index) => (
+                    <ArticleItem key={index} title={article.title} status={index % 2 === 0 ? "ok" : "check"} onClick={() => openPopup(index)} />
+                ))}
             </div>
-          ))}
         </div>
-      </div>
-      {/* 데이터 전체 프리뷰 */}
-      <div className="w-full max-w-[430px] bg-white rounded-2xl shadow p-4 mb-8 border border-[#f3f4f6]">
-        <h2 className="text-lg font-bold mb-2">데이터 통신 확인</h2>
-        <div className="text-xs text-gray-500 mb-2">아래는 실제 전달받은 contractAnalysisData 전체입니다.</div>
-        <pre className="bg-[#f5f5fa] rounded p-2 text-xs overflow-x-auto max-h-64 border border-[#eee]">
-          {JSON.stringify(d, null, 2)}
-        </pre>
-        <div className="mt-4 space-y-2">
-          <div>📝 <b>articles</b> : {Array.isArray(d.articles) ? d.articles.length : 0}개</div>
-          <div>📝 <b>agreements</b> : {Array.isArray(d.agreements) ? d.agreements.length : 0}개</div>
-          <div>📝 <b>recommended_agreements</b> : {Array.isArray(d.recommended_agreements) ? d.recommended_agreements.length : 0}개</div>
+      </main>
+
+      {/* Footer */}
+      <footer className="absolute bottom-0 left-0 right-0 h-[96px] z-20">
+        <div className="absolute inset-0 bg-white/20 backdrop-blur-sm" />
+        <div className="relative flex justify-center items-center h-full">
+            <div className="flex items-center justify-center w-[320px] h-[50px] bg-white border border-[#d6d6d6] rounded-full shadow-lg px-4">
+               <span className="text-[18px] font-semibold text-[#0e0e0e]">
+                    🔍 계약 조항 분석 결과
+               </span>
+            </div>
         </div>
-        <div className="mt-4">
-          <div className="font-semibold mb-1">articles 첫 항목 미리보기</div>
-          <pre className="bg-[#f5f5fa] rounded p-2 text-xs overflow-x-auto border border-[#eee]">
-            {d.articles && d.articles[0] ? JSON.stringify(d.articles[0], null, 2) : '없음'}
-          </pre>
-        </div>
-      </div>
-      <div className="text-xs text-gray-400">※ 실제 API 연동 시 props로 data만 넘기면 됩니다.</div>
+      </footer>
+      
+      {/* Popup Modal */}
+      {popupIndex !== null && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center">
+              <div 
+                  className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                  onClick={closePopup}
+              />
+              <div className="relative w-[340px] h-[800px]">
+                 <Step2Popup
+                    data={popupData[popupIndex]}
+                    onClose={closePopup}
+                    onPrev={goPrev}
+                    onNext={goNext}
+                    showPrev={popupIndex > 0}
+                    showNext={popupIndex < popupData.length - 1}
+                 />
+              </div>
+          </div>
+      )}
+
     </div>
   );
 }
