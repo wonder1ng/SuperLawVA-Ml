@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import styled from "styled-components";
 import StatusIcon from "@/components/icons/Status";
-import KakaoIcon from "@/components/icons/sns/Kakao";
+
 import StyledInput from "@/components/StyledInput";
 import { useState } from "react";
 import KakaoIcon from "@/components/icons/sns/Kakao";

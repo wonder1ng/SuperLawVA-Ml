@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import SubmitButton from "@/components/SubmitButton";
+import SubmitButton from "@/components/submitButton";
 import StatusIcon from "@/components/icons/Status";
 import { useState } from "react";
 import BackHeader from "@/components/BackHeader";
@@ -251,6 +251,10 @@ function StartPage() {
       </div>
     </div>,
   ];
+
+  const handleTabClick = (index: number) => {
+    setActiveIndex(index);
+  };
 
   return (
     <>
