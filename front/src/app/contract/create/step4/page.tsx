@@ -18,26 +18,7 @@ import MagnifyingGlassIcon from "@/components/icons/MagnifyingGlass";
 import BulbIcon from "@/components/icons/Bulb";
 import ExclamationIcon from "@/components/icons/Exclamation";
 import ArrowDownIcon from "@/components/icons/ArrowDownIcon";
-
-type DivBoxProps = {
-  className?: string;
-  children: ReactNode;
-};
-
-const DivBox = ({ className = "", children }: DivBoxProps) => (
-  <div
-    className={className}
-    style={{
-      background: "white",
-      border: "1px solid #f3f4f6",
-      borderRadius: "20px",
-      fontSize: "1.2rem",
-      opacity: "70%",
-    }}
-  >
-    {children}
-  </div>
-);
+import DivBox from "@/components/DivBox";
 
 function ContractCreateNewPage() {
   const router = useRouter();
