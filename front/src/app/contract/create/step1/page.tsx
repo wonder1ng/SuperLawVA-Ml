@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import SubmitButton from "@/components/SubmitButton";
+import SubmitButton from "@/components/submitButton";
 import StatusIcon from "@/components/icons/Status";
 import { useState } from "react";
 import BackHeader from "@/components/BackHeader";
@@ -156,7 +156,7 @@ function ContractCreateNewPage() {
       <div className="h-20 w-full flex flex-col justify-center items-center">
         <StatusIcon className="mt-[1.4rem]" />
       </div>
-      <BackHeader to="login">임대차 계약서 작성</BackHeader>
+      <BackHeader>임대차 계약서 작성</BackHeader>
       <main className="flex flex-col items-center mt-[3rem] gap-12 mx-10 h-auto">
         <div key="1" className="flex flex-col w-full gap-12">
           <div className="flex flex-col gap-4">
