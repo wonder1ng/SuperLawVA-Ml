@@ -18,9 +18,6 @@ function StartPage() {
     setSelected((prev) => (prev === index ? null : index));
   };
 
-  const handleClick = () => {
-    router.push("/login");
-  };
   return (
     <>
       <main className="flex flex-col items-center h-full bg-white">
@@ -61,6 +58,10 @@ function StartPage() {
         >
           시작하기
         </SubmitButton>
+        <div className="text-[1.3rem]">
+          <button className="mt-8 text-[#797979]"
+          onClick={() => router.push("/main")}>다음에 할래요</button>
+        </div>
       </main>
       <Modal
         isOpen={modalOpen}

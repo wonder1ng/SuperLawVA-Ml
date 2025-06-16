@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import StyledInput from "@/components/StyledInput";
-import { useState } from "react";
 import AlarmIcon from "@/components/icons/Alarm";
 import DocumentIcon from "@/components/icons/Document";
 import AnalyzeIcon from "@/components/icons/Analyze";
@@ -35,7 +34,6 @@ function QuickButton({ bgc, icon, title, description }: QuickButtonProps) {
 
 function StartPage() {
   const router = useRouter();
-  const [emailValue, setEmailValue] = useState("");
 
   return (
     <div className="w-full relative bg-[#f2f1f6] min-h-screen overflow-hidden">
@@ -96,7 +94,7 @@ function StartPage() {
                   <div className="absolute top-0 left-[117px] w-[74px] h-[91px]">
                     <div 
                       className="absolute top-0 left-[7px] w-[60px] h-[60px] rounded-[20px] bg-[#0a84ff] flex items-center justify-center cursor-pointer"
-                      onClick={() => router.push('/main/document')}
+                      onClick={() => router.push('/service2')}
                     >
                       <AnalyzeIcon color="white" />
                     </div>
@@ -107,7 +105,8 @@ function StartPage() {
                       계약을 검토하고 싶어요
                     </div>
                   </div>
-                  <div className="absolute top-0 left-[240px] w-[60px] h-[91px]">
+                  <div className="absolute top-0 left-[240px] w-[60px] h-[91px]"
+                       onClick={() => router.push('/main/certificate')}>
                     <div className="absolute top-0 left-0 w-[60px] h-[60px] rounded-[20px] bg-[#ff453a] flex items-center justify-center">
                       <InfoIcon color="white" />
                     </div>
