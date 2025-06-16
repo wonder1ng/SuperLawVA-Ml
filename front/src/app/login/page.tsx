@@ -4,7 +4,6 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import styled from "styled-components";
-import StatusIcon from "@/components/icons/Status";
 
 import StyledInput from "@/components/StyledInput";
 import { useState } from "react";
@@ -13,8 +12,6 @@ import GoogleIcon from "@/components/icons/sns/Google";
 import NaverIcon from "@/components/icons/sns/Naver";
 import AppleIcon from "@/components/icons/sns/Apple";
 import PasswordVisibilityIcon from "@/components/icons/PasswordVisibility";
-import BackHeader from "@/components/BackHeader";
-import SubmitButton from "@/components/SubmitButton";
 
 // 큰 제목 - 그라데이션 텍스트
 const GradientTitle = styled.span`
@@ -89,7 +86,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className="absolute top-[503px] left-[calc(50%-89.5px)] text-[14px] tracking-[-0.5px] leading-[14px] text-[#0a84ff] underline">
+      <div className="absolute top-[503px] left-[calc(50%-89.5px)] text-[14px] tracking-[-0.5px] leading-[14px] text-[#0a84ff] underline"
+       onClick={() => router.push("/register")}>
         회원가입
       </div>
       <div className="absolute top-[503px] left-[calc(50%+41.5px)] text-[14px] tracking-[-0.5px] leading-[14px] text-[rgba(0,0,0,0.7)]">
