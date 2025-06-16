@@ -33,7 +33,7 @@ const SubText = styled.p`
   color: #0f0f0f;
 `;
 
-function StartPage() {
+function LoginPage() {
   const router = useRouter();
   const [emailValue, setemailValue] = useState("");
 
@@ -45,14 +45,15 @@ function StartPage() {
       <div className="h-20 w-full flex flex-col justify-center items-center">
         <StatusIcon className="mt-[1.4rem]" />
       </div>
-      <BackHeader />
-      <main className="flex flex-col items-center mt-[3.6rem] mx-8">
-        <div className="flex flex-col text-center text-main font-sans">
-          <div className="font-bold text-[4rem] leading-[120%] ">Super</div>
-          <div className="font-black text-[5rem] leading-[120%]">LAWVA</div>
+      <main className="flex flex-col items-center mt-[3rem] gap-12 mx-10 h-auto">
+        <div className="mt-20 gap-4 flex flex-col justify-center items-center">
+          <img src="/logo.svg" alt="logo" className="h-16" />
+          <span className="h-20 font-semibold text-[4rem] tracking-[-0.04em] bg-gradient-to-r from-[#6000FF] to-[#E100FF] bg-clip-text text-transparent">
+            Super LawVA
+          </span>
         </div>
         <div className="mt-12 flex flex-col gap-8">
-          <div className="flex flex-col gap-4 text-[1.4rem]">
+          <div className="flex flex-col gap-4 text-[1.8rem]">
             <span className="font-medium">이메일 주소</span>
             <StyledInput
               type="email"
@@ -60,7 +61,7 @@ function StartPage() {
               onChange={(e) => setemailValue(e.target.value)}
             />
           </div>
-          <div className="flex flex-col gap-4 text-[1.4rem]">
+          <div className="flex flex-col gap-4 text-[1.8rem]">
             <span className="font-medium">비밀번호</span>
             <StyledInput
               type="password"
@@ -111,11 +112,14 @@ function StartPage() {
             <span>회원가입</span>
           </div>
         </div>
-        <div className="flex flex-col justify-center items-center gap-8">
-          <div className="mt-16 flex items-center gap-4 text-xl">
-            <hr className="w-44 border-[#797979]" />
-            <span>SNS 계정으로 로그인</span>
-            <hr className="w-44 border-[#797979]" />
+        <div className="w-full flex flex-col justify-center items-center gap-8">
+          <div className="mt-16 w-full flex justify-between items-center gap-4 text-xl">
+            {/* <hr className="flex-1 border-[#797979]" />
+            <span className="flex-1 text-center">SNS 계정으로 로그인</span>
+            <hr className="flex-1 border-[#797979]" /> */}
+            <hr className="w-full border-[#797979]" />
+            <span className="min-w-44 text-center">SNS 계정으로 로그인</span>
+            <hr className="w-full border-[#797979]" />
           </div>
           <div className="flex flex-row gap-12">
             <KakaoIcon />
@@ -129,4 +133,4 @@ function StartPage() {
   );
 }
 
-export default StartPage;
+export default LoginPage;
