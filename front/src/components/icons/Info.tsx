@@ -3,7 +3,7 @@ import IconOptions from "@/app/types/IconOptions";
 const InfoIcon = ({
   width = 2,
   height = 2,
-  color = "#ffffff",
+  color = "#6000FF",
   className,
 }: IconOptions) => (
   <svg

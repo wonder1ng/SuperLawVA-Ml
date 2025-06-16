@@ -1,46 +1,63 @@
 // page.tsx
 "use client";
 
+import SubmitButton from "@/components/SubmitButton";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import styled from "styled-components";
 
-export default function StartPage() {
+// 큰 제목 - 그라데이션 텍스트
+const GradientTitle = styled.span`
+  font-weight: 700;
+  font-size: 3rem;
+  line-height: 120%;
+
+  background: linear-gradient(180deg, #5046e5 50%, #9134eb 143.75%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+`;
+
+const SubText = styled.p`
+  font-weight: 500;
+  font-size: 1.6rem;
+  line-height: 120%;
+  color: #0f0f0f;
+`;
+
+function StartPage() {
   const router = useRouter();
 
   const handleClick = () => {
     router.push("/login");
   };
-
   return (
-    <div className="w-full relative bg-white h-[852px] overflow-hidden text-left text-[40px] text-black font-pretendard">
-      <div className="absolute top-[calc(50%-52px)] left-[calc(50%-111.5px)] tracking-[-0.04em] leading-[120%] font-semibold">
-        Super Lawva
-      </div>
-      
-      <div 
-        className="absolute top-[722px] left-[36px] rounded-[30px] bg-[#6000ff] w-[320px] h-[50px] cursor-pointer flex items-center justify-center"
-        onClick={handleClick}
-      >
-        <div className="text-[18px] leading-[120%] font-medium text-white whitespace-nowrap">
-          시작하기
+    <>
+      <div className="h-20" />
+      <main className="flex flex-col items-center w-full mt-52">
+        <div className="flex flex-col">
+          <span className="font-bold text-[2rem] text-center">
+            <GradientTitle>나</GradientTitle>만의{" "}
+            <GradientTitle>작</GradientTitle>은{" "}
+            <GradientTitle>변</GradientTitle>
+            호사
+          </span>
+          <SubText className="text-center">
+            임대차 계약, <span className="text-red-600">분쟁</span> 대신{" "}
+            <span className="text-main">분석</span>을.
+          </SubText>
         </div>
-      </div>
-
-      <div className="absolute top-[437px] left-[calc(50%-132.5px)] text-[17px] leading-[120%] text-center">
-        <p className="m-0">임대차 계약, 분쟁 대신 분석을.</p>
-        <p className="m-0">쉬운 계약서 분석과 Ai 기반 명확한 분석.</p>
-      </div>
-
-      <div className="absolute top-[314px] left-[163px]">
-        <Image
-          src="/lovalogo.svg"
-          alt="Super Lawva Logo"
-          width={66}
-          height={33}
-          className="object-cover"
-          priority
+        <img
+          src="img.png"
+          alt="Main Icon"
+          className="h-[22.5rem] my-[0.6rem]"
         />
-      </div>
-    </div>
+        <div className="mt-[8.8rem]" onClick={handleClick}>
+          <SubmitButton>시작하기</SubmitButton>
+        </div>
+      </main>
+    </>
   );
 }
+
+export default StartPage;

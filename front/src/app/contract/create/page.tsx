@@ -5,7 +5,7 @@ import CheckedIcon from "@/components/icons/Checked";
 import DocumentIcon from "@/components/icons/Document";
 import Modal from "@/components/Modal";
 import StyledDiv from "@/components/StyledDiv";
-import SubmitButton from "@/components/submitButton";
+import SubmitButton from "@/components/SubmitButton";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -59,8 +59,12 @@ function StartPage() {
           시작하기
         </SubmitButton>
         <div className="text-[1.3rem]">
-          <button className="mt-8 text-[#797979]"
-          onClick={() => router.push("/main")}>다음에 할래요</button>
+          <button
+            className="mt-8 text-[#797979]"
+            onClick={() => router.push("/main")}
+          >
+            다음에 할래요
+          </button>
         </div>
       </main>
       <Modal

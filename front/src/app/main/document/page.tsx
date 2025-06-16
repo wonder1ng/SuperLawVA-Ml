@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import SubmitButton from "@/components/submitButton";
+import SubmitButton from "@/components/SubmitButton";
 import StatusIcon from "@/components/icons/Status";
 import { useState } from "react";
 import BackHeader from "@/components/BackHeader";
@@ -150,7 +150,7 @@ function StartPage() {
         </div>
       </div>
     </div>,
-    <div key="1" className="flex flex-col w-full gap-4">
+    <div key="2" className="flex flex-col w-full gap-4">
       <span className="text-[1.6rem] font-bold pl-8">계약 조항</span>
       <div className="flex flex-col gap-2 w-full rounded-[30px] p-12 bg-white font-bold text-[1.2rem]">
         제1조: (목적)
@@ -251,10 +251,6 @@ function StartPage() {
       </div>
     </div>,
   ];
-
-  const handleTabClick = (index: number) => {
-    setActiveIndex(index);
-  };
 
   return (
     <>
