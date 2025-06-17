@@ -9,6 +9,7 @@ import time
 from datetime import datetime
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
+#from langchain.output_parsers import PydanticOutputParser
 
 # 공통 모듈들 import
 from services.shared.document_search import DocumentSearchService
@@ -63,7 +64,7 @@ letter_prompt = ChatPromptTemplate.from_template("""
    예시: "「주택임대차보호법」 제4조에 따르면 '임차인은 보증금 반환을 요구할 권리가 있다'고 규정하고 있으므로..."
 2. **관련성 검증**: 사용자 상황과 직접 관련 없는 법령은 절대 인용 금지
 3. **정확한 인용**: 「전체 법령명」 형식 사용, "동법", "같은 법" 등 축약 표현 금지
-4. **제공된 법령만 사용**: 위에 제시된 관련 법령 외에는 인용하지 마세요
+4. **제시된 법령만 사용**: 위에 제시된 "관련 법령" 목록에 있는 법령만 인용하세요. 다른 법령은 절대 사용하지 마세요.
 
 **📝 어조 및 강도 설정:**
 - 협력적, 정중한 어조
@@ -81,10 +82,18 @@ letter_prompt = ChatPromptTemplate.from_template("""
 8. 발송 날짜 및 서명
 
 **⚖️ 법적 안정성 확보:**
-- 제시된 관련 법령의 구체적 내용을 정확히 반영
+- 제시된 관련 법령이 있는 경우에만 해당 법령의 구체적 내용을 정확히 반영
+- 관련 법령이 없거나 부족한 경우, 일반적인 법리와 상식선에서 논리적으로 작성
 - 과도한 위협이나 불가능한 요구사항 배제
 - 실제 우체국 내용증명 우편 발송 가능한 형식과 문체
 - 객관적이고 감정적 표현 배제
+                                                 
+🔴 **반드시 피해야 할 것들**:
+- 제공되지 않은 법령 언급
+- "동법", "같은 법", "상기 법률" 등 축약 표현
+- 임대부동산 주소와 당사자 주소 혼동
+- 과도한 법적 위협
+- 감정적이거나 주관적 표현
 
 {format_instructions}
 """).partial(format_instructions=output_parser.get_format_instructions())
@@ -139,10 +148,53 @@ class LetterGenerationOrchestrator:
             
             # 3. 공통 서비스 사용 - 문서 검색
             law_docs, case_docs = await self.search_service.search_documents(user_query)
+
+            # === ChromaDB 구조 확인 디버깅 코드 추가 ===
+            print(f"[DEBUG] 검색된 law_docs 상세 정보:")
+            print(f"[DEBUG] law_docs 개수: {len(law_docs)}")
+
+            for i, doc in enumerate(law_docs[:3]):  # 처음 3개만 출력
+                print(f"[DEBUG] law_doc[{i}] 메타데이터:")
+                for key, value in doc.metadata.items():
+                    print(f"  {key}: {value}")
+                print(f"[DEBUG] law_doc[{i}] 내용 (처음 100자): {doc.page_content[:100]}...")
+                print("---")
+
+            # === 특정 법령 검색 테스트 ===
+            # 우리가 찾고 있는 법령이 실제로 ChromaDB에 있는지 확인
+            target_laws = [
+                "주택임대차계약증서의 확정일자 부여 및 정보제공에 관한 규칙",
+                "임차권등기명령 절차에 관한 규칙",
+                "주택임대차보호법"
+            ]
+
+            print(f"[DEBUG] 특정 법령 검색 테스트:")
+            for target_law in target_laws:
+                matching_docs = [doc for doc in law_docs if target_law in doc.metadata.get("법령명", "")]
+                print(f"'{target_law}' 관련 문서: {len(matching_docs)}개")
+                if matching_docs:
+                    print(f"  첫 번째 매칭 문서 메타데이터: {matching_docs[0].metadata}")
+
+            # === 메타데이터 키 확인 ===
+            all_keys = set()
+            for doc in law_docs:
+                all_keys.update(doc.metadata.keys())
+            print(f"[DEBUG] law_docs에서 사용된 모든 메타데이터 키들: {sorted(all_keys)}")
             
             # 4. 공통 유틸 사용 - 프롬프트용 포맷팅
             related_laws_str = self.formatter.format_law_documents(law_docs)
             related_cases_str = self.formatter.format_case_documents(case_docs)
+
+            # === related_laws_str 내용 확인 디버깅 ===
+            print(f"[DEBUG] related_laws_str 내용:")
+            print(f"[DEBUG] related_laws_str 길이: {len(related_laws_str)}")
+            print(f"[DEBUG] related_laws_str 내용:\n{related_laws_str}")
+            print("=" * 50)
+
+            print(f"[DEBUG] related_cases_str 내용:")
+            print(f"[DEBUG] related_cases_str 길이: {len(related_cases_str)}")
+            print(f"[DEBUG] related_cases_str 내용:\n{related_cases_str}")
+            print("=" * 50)
             
             # 5. 내용증명 특화 - LLM 체인 실행 (수정됨)
             temp_result = await self.letter_chain.ainvoke({
