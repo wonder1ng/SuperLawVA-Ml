@@ -1,88 +1,362 @@
 """
-[main.py] - FastAPI 서버 진입점 (최종 완성 버전)
+통합 main.py - AI 법률 서비스 API 서버
+=====================================
 
-이 파일은 전체 AI 법률 시스템의 API 서버 역할을 합니다.
-모든 기능별 route들을 등록하고, FastAPI 앱을 실행합니다.
+Description:  
+내용증명 생성, 계약서 검토, 특약사항 생성을 포함한 통합 AI 법률 서비스 FastAPI 앱
+환경설정, 예외처리, CORS, 라우터 등록 및 헬스체크 포함
 
-완성된 기능:
-- 내용증명 생성 기능 (새로운 임대차 계약서 형식 지원)
-- 계약서 검토 분석 기능 (조항별 위험도 분석)
-
-구성:
-- FastAPI 앱 인스턴스 생성
-- 기능별 라우트 등록 (내용증명, 계약검토, 특약사항)
-- CORS 설정 (개발 시 전체 허용, 배포 시 특정 도메인으로 제한)
-
-서버 실행 명령어:
-uvicorn main:app --reload
+Author: ooheunsu  
+Date: 2025-06-16  
+Requirements: fastapi, uvicorn, python-dotenv, logging
 """
-
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+import uvicorn
+import logging
+from datetime import datetime
+import os
+from dotenv import load_dotenv
 
-# 기능별 라우트 import
-from routes.generate_letter import router as letter_router
-from routes.analyze_contract import router as analyze_router
-#from routes.generate_clause import router as clause_router
+# 환경변수 로드
+load_dotenv()
 
-# ✅ FastAPI 앱 생성
+# 라우터 임포트
+try:
+    # 특약사항 생성 라우터
+    from routes.contract_terms_router import router as contract_router
+except ImportError:
+    contract_router = None
+    print("⚠️  contract_terms_router를 찾을 수 없습니다.")
+
+try:
+    # 내용증명 생성 라우터
+    from routes.generate_letter import router as letter_router
+except ImportError:
+    letter_router = None
+    print("⚠️  generate_letter router를 찾을 수 없습니다.")
+
+try:
+    # 계약서 검토 라우터
+    from routes.analyze_contract import router as analyze_router
+except ImportError:
+    analyze_router = None
+    print("⚠️  analyze_contract router를 찾을 수 없습니다.")
+
+# 로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    앱 생명주기 관리
+    - 시작 시: 필요한 초기화 작업
+    - 종료 시: 리소스 정리
+    """
+    # 앱 시작 시
+    logger.info("🚀 통합 AI 법률 서비스 시작")
+    logger.info(f"📅 시작 시간: {datetime.now().isoformat()}")
+    
+    # 환경변수 검증
+    required_env_vars = ["ANTHROPIC_API_KEY"]
+    optional_env_vars = ["OPENAI_API_KEY"]
+    
+    missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+    
+    if missing_vars:
+        logger.error(f"❌ 필수 환경변수가 없습니다: {missing_vars}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"필수 환경변수가 설정되지 않았습니다: {missing_vars}"
+        )
+    
+    # 선택적 환경변수 확인
+    missing_optional = [var for var in optional_env_vars if not os.getenv(var)]
+    if missing_optional:
+        logger.warning(f"⚠️  선택적 환경변수가 없습니다: {missing_optional}")
+    
+    logger.info("✅ 환경변수 검증 완료")
+    
+    # 로드된 라우터 확인
+    router_status = {
+        "특약사항 생성": "✅" if contract_router else "❌",
+        "내용증명 생성": "✅" if letter_router else "❌", 
+        "계약서 검토": "✅" if analyze_router else "❌"
+    }
+    
+    for service, status in router_status.items():
+        logger.info(f"{status} {service} 서비스")
+    
+    logger.info("✅ 통합 AI 법률 서비스 초기화 완료")
+    
+    yield
+    
+    # 앱 종료 시
+    logger.info("🛑 통합 AI 법률 서비스 종료")
+
+
+# FastAPI 앱 생성
 app = FastAPI(
-    title="AI Legal Assistant",
-    description="Claude + RAG 기반 법률 자동화 API 시스템 (임대차 전문)",
+    title="🏛️ 통합 AI 법률 서비스 API",
+    description="""
+    ## 📋 통합 AI 법률 서비스
+    
+    **Claude Sonnet 4** 기반의 종합 법률 자동화 시스템으로, 
+    임대차 전문 변호사의 25년 경력을 바탕으로 한 AI 법률 서비스입니다.
+    
+    ### 🎯 주요 서비스
+    
+    #### 1. 📝 내용증명 생성
+    - **기능**: 임대차 관련 내용증명서 자동 생성
+    - **특징**: 법적 근거와 판례 기반 문서 작성
+    - **엔드포인트**: `/api/v2/generate-letter`
+    
+    #### 2. 🔍 계약서 검토 분석
+    - **기능**: 임대차 계약서 조항별 위험도 분석
+    - **특징**: RAG 기반 법령·판례 검색 및 분석
+    - **엔드포인트**: `/api/v2/analyze-contract`
+    
+    #### 3. ⚖️ 특약사항 생성
+    - **기능**: 임차인 중심의 맞춤형 특약 조건 제안
+    - **특징**: 법령 근거 제시 및 협상 전략 제공
+    - **엔드포인트**: `/api/v1/contract/generate-special-terms`
+    
+    ### 📊 공통 특징
+    - **AI 모델**: Claude Sonnet 4 (최신 버전)
+    - **전문 분야**: 임대차 계약 전문
+    - **법적 근거**: 상세한 법령 해설 (조, 항, 호까지)
+    - **판례 정보**: 관련 판례 요약과 분석
+    - **실무 중심**: 25년 경력 변호사 페르소나
+    
+    ### 🔧 기술 스택
+    - **프레임워크**: FastAPI + LangChain
+    - **AI 엔진**: Claude Sonnet 4 API
+    - **검증**: Pydantic 스키마
+    - **검색**: RAG 기반 법령·판례 데이터베이스
+    
+    ### 📞 지원 정보
+    - **문의**: contact@example.com
+    - **문서**: 각 엔드포인트별 상세 API 문서 제공
+    - **버전**: v2.0.0 (통합 버전)
+    """,
     version="2.0.0",
+    contact={
+        "name": "통합 AI 법률 서비스",
+        "email": "contact@example.com",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
-# ✅ CORS 설정 (개발 환경에서는 * 허용, 배포 시 제한 필요)
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 배포 환경에선 ["https://yourdomain.com"] 등으로 변경
+    allow_origins=["*"],  # 실제 운영 시에는 특정 도메인으로 제한
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ 기능별 라우터 등록
-app.include_router(letter_router, prefix="/api/v2", tags=["내용증명 생성"])
-app.include_router(analyze_router, prefix="/api/v2", tags=["계약서 검토"])
-#app.include_router(clause_router, prefix="/api/v2", tags=["특약사항 생성"])
+# 라우터 등록
+if letter_router:
+    app.include_router(letter_router, prefix="/api/v2", tags=["📝 내용증명 생성"])
 
-# ✅ 루트 경로 - 서버 상태 확인용 (비동기로 변경)
-@app.get("/")
+if analyze_router:
+    app.include_router(analyze_router, prefix="/api/v2", tags=["🔍 계약서 검토"])
+
+if contract_router:
+    app.include_router(contract_router, tags=["⚖️ 특약사항 생성"])
+
+# 루트 엔드포인트
+@app.get("/", tags=["🏠 기본 정보"])
 async def root():
+    """
+    통합 AI 법률 서비스 기본 정보 조회
+    """
+    # 활성화된 서비스 확인
+    active_services = []
+    if letter_router:
+        active_services.append("📝 내용증명 생성")
+    if analyze_router:
+        active_services.append("🔍 계약서 검토")
+    if contract_router:
+        active_services.append("⚖️ 특약사항 생성")
+    
     return {
-        "message": "✅ AI Legal Assistant API is live and running.",
+        "service": "🏛️ 통합 AI 법률 서비스 API",
         "version": "2.0.0",
+        "description": "Claude Sonnet 4 기반 종합 법률 자동화 시스템",
+        "specialist": "임대차 전문 (25년 경력 변호사 페르소나)",
+        "ai_model": "Claude Sonnet 4",
+        "active_services": active_services,
+        "available_endpoints": {
+            "docs": "/docs",
+            "redoc": "/redoc",
+            "health": "/health",
+            "detailed_health": "/health/detailed",
+            "letter_generation": "/api/v2/generate-letter" if letter_router else "❌ 비활성화",
+            "contract_analysis": "/api/v2/analyze-contract" if analyze_router else "❌ 비활성화",
+            "special_terms": "/api/v1/contract/generate-special-terms" if contract_router else "❌ 비활성화",
+            "special_terms_health": "/api/v1/contract/health" if contract_router else "❌ 비활성화",
+            "special_terms_validate": "/api/v1/contract/validate-input" if contract_router else "❌ 비활성화"
+        },
         "features": [
-            "임대차 계약서 기반 내용증명 생성",
-            "임대차 계약서 조항별 위험도 검토",
-            "RAG 기반 법령·판례 검색",
-            "Claude Sonnet 4 기반 문서 생성"
+            "📝 RAG 기반 내용증명 자동 생성",
+            "🔍 계약서 조항별 위험도 분석",
+            "⚖️ 임차인 중심 특약사항 제안",
+            "📚 법령·판례 검색 및 해설",
+            "💼 실무 중심 협상 전략 제공"
         ],
-        "available_endpoints": [
-            "POST /api/v2/generate-letter - 내용증명 생성",
-            "POST /api/v2/analyze-contract - 계약서 검토",
-            "GET /docs - API 문서"
-        ],
-        "docs_url": "/docs"
+        "timestamp": datetime.now().isoformat(),
+        "status": "🟢 정상 운영 중"
     }
 
-# ✅ 시스템 상태 확인
-@app.get("/health")
+
+# 헬스체크 엔드포인트들
+@app.get("/health", tags=["🏥 모니터링"])
 async def health_check():
+    """
+    기본 헬스체크 엔드포인트
+    """
     return {
         "status": "healthy",
-        "version": "2.0.0",
-        "service": "ai_legal_assistant",
-        "active_features": {
-            "letter_generation": "✅ 활성화",
-            "contract_analysis": "✅ 활성화", 
-            "clause_generation": "⏳ 준비중"
-        },
-        "timestamp": "2025-06-15T00:00:00Z"
+        "service": "unified-ai-legal-assistant",
+        "timestamp": datetime.now().isoformat(),
+        "version": "2.0.0"
     }
 
+
+@app.get("/health/detailed", tags=["🏥 모니터링"])
+async def detailed_health_check():
+    """
+    상세 헬스체크 - 각 서비스별 상태 확인
+    """
+    service_health = {
+        "내용증명_생성": {
+            "status": "active" if letter_router else "inactive",
+            "endpoint": "/api/v2/generate-letter" if letter_router else None,
+            "description": "임대차 관련 내용증명서 자동 생성"
+        },
+        "계약서_검토": {
+            "status": "active" if analyze_router else "inactive", 
+            "endpoint": "/api/v2/analyze-contract" if analyze_router else None,
+            "description": "임대차 계약서 조항별 위험도 분석"
+        },
+        "특약사항_생성": {
+            "status": "active" if contract_router else "inactive",
+            "endpoint": "/api/v1/contract/generate-special-terms" if contract_router else None,
+            "description": "임차인 중심의 맞춤형 특약 조건 제안"
+        }
+    }
+    
+    active_count = sum(1 for service in service_health.values() if service["status"] == "active")
+    
+    return {
+        "overall_status": "healthy" if active_count > 0 else "warning",
+        "active_services": active_count,
+        "total_services": len(service_health),
+        "services": service_health,
+        "system_info": {
+            "python_version": "3.x",
+            "fastapi_version": "0.x",
+            "ai_model": "Claude Sonnet 4",
+            "framework": "FastAPI + LangChain"
+        },
+        "environment": {
+            "anthropic_api": "✅" if os.getenv("ANTHROPIC_API_KEY") else "❌",
+            "openai_api": "✅" if os.getenv("OPENAI_API_KEY") else "⚠️"
+        },
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+# 전역 예외 처리
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    """
+    전역 예외 처리기
+    """
+    logger.error(f"예상치 못한 오류 발생: {str(exc)}", exc_info=True)
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "message": "서버에서 예상치 못한 오류가 발생했습니다.",
+            "error_code": "INTERNAL_SERVER_ERROR",
+            "timestamp": datetime.now().isoformat(),
+            "path": str(request.url),
+            "service": "unified-ai-legal-assistant"
+        }
+    )
+
+
+# 404 에러 처리
+@app.exception_handler(404)
+async def not_found_handler(request, exc):
+    """
+    404 에러 처리기
+    """
+    available_endpoints = ["/docs", "/health", "/health/detailed"]
+    
+    if letter_router:
+        available_endpoints.append("/api/v2/generate-letter")
+    if analyze_router:
+        available_endpoints.append("/api/v2/analyze-contract")
+    if contract_router:
+        available_endpoints.extend([
+            "/api/v1/contract/generate-special-terms",
+            "/api/v1/contract/health",
+            "/api/v1/contract/validate-input"
+        ])
+    
+    return JSONResponse(
+        status_code=404,
+        content={
+            "success": False,
+            "message": "요청하신 API 엔드포인트를 찾을 수 없습니다.",
+            "error_code": "NOT_FOUND",
+            "path": str(request.url),
+            "available_endpoints": available_endpoints,
+            "tip": "'/docs'에서 전체 API 문서를 확인하세요.",
+            "timestamp": datetime.now().isoformat()
+        }
+    )
+
+
+# 메인 실행
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # 환경변수에서 설정 읽기
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    reload = os.getenv("RELOAD", "True").lower() == "true"
+    
+    logger.info("=" * 60)
+    logger.info("🏛️  통합 AI 법률 서비스 시작")
+    logger.info("=" * 60)
+    logger.info(f"🌐 서버 주소: {host}:{port}")
+    logger.info(f"📖 API 문서: http://{host}:{port}/docs")
+    logger.info(f"📚 ReDoc 문서: http://{host}:{port}/redoc")
+    logger.info(f"🔄 자동 리로드: {reload}")
+    logger.info(f"🏥 헬스체크: http://{host}:{port}/health")
+    logger.info("=" * 60)
+    
+    uvicorn.run(
+        "main:app",
+        host=host,
+        port=port,
+        reload=reload,
+        log_level="info"
+    )
