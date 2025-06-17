@@ -1,7 +1,7 @@
 """
-[analyze_contract_chain.py] - 계약서 검토 생성 체인 (정리된 버전)
+[analyze_contract_chain.py] - 계약서 검토 생성 체인 (조항별 개별 분석 + 즉시 요약)
 
-조항별로 RAG 검색 → LLM 판단 → 즉시 요약 → 결과 조립
+조항별로 RAG 검색 → LLM 판단 → 즉시 요약 → 결과 조립 방식
 """
 
 import time
@@ -9,12 +9,12 @@ import asyncio
 from datetime import datetime
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field
-from typing import Optional, List
 
 # 공통 모듈들 import
 from services.shared.document_search import DocumentSearchService
 from services.shared.contract_parser import extract_contract_clauses, extract_key_contract_info
+from services.shared.legal_processor import LegalProcessor, convert_to_legal_basis
+from services.shared.case_processor import CaseProcessor, convert_to_case_basis
 from services.shared.formatters import DocumentFormatter
 from services.shared.llm_config import get_claude_llm_for_review
 
@@ -23,43 +23,86 @@ from services.schema.analyze_schema import (
     ContractAnalysisInput,
     ContractAnalysisOutput,
     ClauseAnalysis,
+    RecommendedAgreement,
     AnalysisMetadata,
     ClauseLegalBasis,
     ClauseCaseBasis
 )
 
-# LLM 출력용 스키마
+# 조항별 분석용 스키마
+from pydantic import BaseModel, Field
+from typing import Optional, List
+
 class SingleClauseAnalysisResult(BaseModel):
     """단일 조항 분석 결과 (LLM 출력용)"""
     result: bool = Field(description="적절 여부 (true: 적절, false: 부적절)")
-    reason: str = Field(description="판단 이유")
+    reason: str = Field(description="판단 이유 (1-2줄)")
     suggested_revision: Optional[str] = Field(default=None, description="수정안 (부적절시만)")
     negotiation_points: Optional[str] = Field(default=None, description="협상 포인트 (부적절시만)")
-    selected_law: Optional[str] = Field(default=None, description="가장 관련성 높은 법령 1개")
-    selected_cases: List[str] = Field(default_factory=list, description="가장 관련성 높은 판례 3개")
+    selected_law: Optional[str] = Field(default=None, description="가장 관련성 높은 법령 1개 (부적절시만)")
+    selected_cases: List[str] = Field(default_factory=list, description="가장 관련성 높은 판례 3개 (부적절시만)")
 
-# LLM 설정
+# 계약서 검토 전용 LLM 설정
 llm = get_claude_llm_for_review()
 output_parser = PydanticOutputParser(pydantic_object=SingleClauseAnalysisResult)
 
-# 조항별 분석 프롬프트
+# 조항별 분석 프롬프트 템플릿 (근본적 수정)
 clause_analysis_prompt = ChatPromptTemplate.from_template("""
 당신은 25년 경력의 임대차 전문 변호사입니다.
 다음 계약 조항을 **계약서 전체 맥락**을 고려하여 객관적으로 검토해주세요.
 
+【계약서 정보】
 {contract_context}
 
 【검토 대상 조항】
 {clause_content}
 
-【검토 영역】
+【중요한 판단 원칙】
+1. **계약서는 여러 조항이 함께 작동하는 유기적 전체입니다**
+2. **위의 계약서 기본 정보에 필요한 내용이 이미 명시되어 있다면 해당 조항은 적절한 것입니다**
+3. **일반적이고 표준적인 조항은 적절한 것으로 판단하세요**
+4. **명백하고 심각한 문제가 있을 때만 부적절로 판단하세요**
+
+【예시】
+✅ 적절한 경우:
+- "매월 5일까지 월세 지급" → 일반적인 월세 납부 조항으로 적절
+- "에어컨 설치 후 철거" → 표준적인 원상복구 조항으로 적절
+
+❌ 부적절한 경우:
+- "임차인이 모든 손해를 무제한 배상" → 명백히 과도한 책임
+- "임대인이 언제든 계약 해지 가능" → 명백한 법령 위반
+- "보증금 없이 월세만 지급" → 임차인에게 심각한 불이익
+
+【관련 법령 (10개)】
+{related_laws_str}
+
+【관련 판례 (10개)】
+{related_cases_str}
+
+**검토 기준 (매우 중요!):**
+    - **주의**(result=false): 모호한 표현, 불균형한 권리관계, 협상이 필요한 조항, 업계 표준을 벗어난 조항, 임대차보호법 위반 소지, 임차인에게 과도한 불이익, 법적 분쟁 가능성 높음, 강제집행 시 문제 발생 가능
+    - **적절(result=true)**: 법령에 부합하고 균형잡힌 조항, 양 당사자의 권리가 적절히 보호됨
+
+[검토 영역]
 다음 3가지 영역을 반드시 검토하세요:
 
-1. **형식 검토**: 필수 계약 요소의 누락 여부, 용어 사용의 일관성, 참조 조항의 정확성
-2. **내용 검토**: 책임과 의무의 균형성, 모호하거나 해석의 여지가 있는 조항, 당사자의 권리 보호 수준, 업계 표준 대비 적정성  
-3. **법적 위험 검토**: 법규 위반 가능성, 집행 가능성 문제, 잠재적 분쟁 유발 조항
+1. **형식 검토**
+   - 필수 계약 요소의 누락 여부
+   - 용어 사용의 일관성
+   - 참조 조항의 정확성
 
-【중점 검토 사항】
+2. **내용 검토**
+   - 책임과 의무의 균형성
+   - 모호하거나 해석의 여지가 있는 조항
+   - 당사자의 권리 보호 수준
+   - 업계 표준 대비 적정성
+
+3. **법적 위험 검토**
+   - 법규 위반 가능성
+   - 집행 가능성 문제
+   - 잠재적 분쟁 유발 조항
+
+[중점 검토 사항]
 다음 7가지 사항에 특히 주의하여 검토하세요:
 1. 임대차보호법 위반 소지가 있는 조항
 2. 임대료 및 보증금 관련 불공정 조항
@@ -69,22 +112,21 @@ clause_analysis_prompt = ChatPromptTemplate.from_template("""
 6. 수선 및 유지보수 책임 분배의 불균형
 7. 원상복구 의무의 범위가 모호하거나 과도한 조항
 
-【판단 기준】
-- **적절 (result: true)**: 법령에 부합하고 균형잡힌 조항, 양 당사자의 권리가 적절히 보호됨
-- **부적절 (result: false)**: 위 검토 영역이나 중점 사항에서 명백한 문제가 발견되고, 법령 위반 소지가 있거나, 임차인에게 과도한 불이익을 주는 조항
-
-【관련 법령 (10개)】
-{related_laws_str}
-
-【관련 판례 (10개)】
-{related_cases_str}
+[각 문제 조항별 분석 요구사항]
+각 문제가 있는 조항에 대해 다음을 포함하세요:
+1. 문제점 지적 및 법적 위험 설명
+2. 임대차보호법 등 관련법령 인용
+3. 구체적인 수정안 제시
+4. 수정 전/후 조항 비교
+5. 협상 포인트 제시
+6. 특정 조항의 의미, 법적 효력, 당사자에게 미치는 영향 분석
                                                           
 **reason은 1-2줄로 간결하게 작성하세요.**
 
-**부적절한 경우에만 다음을 포함하세요:**
+**부적절한 경우에만:**
 - 위 법령 목록에서 가장 관련성 높은 법령 1개를 selected_law에 정확히 기재
-- 위 판례 목록에서 가장 관련성 높은 판례 3개를 selected_cases에 정확히 기재
-- 구체적인 수정안과 협상 포인트 제시
+- 위 판례 목록에서 가장 관련성 높은 서로 다른 사건의 판례 3개를 selected_cases에 정확히 기재
+- 수정안과 협상 포인트 제시
 
 {format_instructions}
 """).partial(format_instructions=output_parser.get_format_instructions())
@@ -110,27 +152,53 @@ case_summary_prompt = ChatPromptTemplate.from_template("""
 이 판례가 해당 조항의 문제점과 어떤 연관이 있는지 간단히 설명하세요.
 """)
 
-# 체인 구성
+# 조항별 분석 체인들
 clause_analysis_chain = clause_analysis_prompt | llm | output_parser
 law_summary_chain = law_summary_prompt | llm
 case_summary_chain = case_summary_prompt | llm
 
 class ContractAnalysisOrchestrator:
-    """계약서 검토 오케스트레이터"""
+    """계약서 검토 오케스트레이터 (조항별 개별 분석 + 즉시 요약)"""
     
     def __init__(self):
+        self.llm = llm
         self.clause_analysis_chain = clause_analysis_chain
         self.law_summary_chain = law_summary_chain
         self.case_summary_chain = case_summary_chain
+        
+        # 공통 서비스들 조립
         self.search_service = DocumentSearchService()
+        self.legal_processor = LegalProcessor(self.llm)
+        self.case_processor = CaseProcessor(self.llm)
         self.formatter = DocumentFormatter()
+        
+        # 🔧 별도 저장소 제거 (더 이상 필요 없음)
+        # self.law_summaries = {}
+        # self.case_summaries = {}  # {case_id: {"case": "...", "explanation": "..."}}
+    
+    def create_contract_summary(self, contract_data: dict) -> str:
+        """계약서 요약 생성"""
+        contract_info = extract_key_contract_info(contract_data)
+        
+        return f"""
+계약유형: {contract_info.get('contract_type', '')}
+부동산: {contract_info.get('address', '')}
+보증금: {contract_info.get('deposit', 0):,}원
+월세: {contract_info.get('monthly_rent', 0):,}원
+계약기간: {contract_info.get('start_date', '')} ~ {contract_info.get('end_date', '')}
+임대인: {contract_info.get('lessor_name', '')}
+임차인: {contract_info.get('lessee_name', '')}
+"""
     
     async def search_for_clause(self, clause_content: str) -> tuple:
-        """개별 조항에 대한 RAG 검색"""
+        """개별 조항에 대한 RAG 검색 (법령 10개, 판례 10개)"""
         if not self.search_service.law_vectorstore:
             await self.search_service.load_vectorstores()
         
+        # 조항 내용을 기반으로 검색 쿼리 생성
         search_query = f"임대차계약 조항 검토: {clause_content}"
+        
+        # 별도 스레드에서 벡터 검색 실행
         loop = asyncio.get_event_loop()
         
         # 법령 10개 검색
@@ -149,8 +217,13 @@ class ContractAnalysisOrchestrator:
     
     def extract_case_id_from_doc_id(self, doc_id: str, case_name: str = "") -> int:
         """해시 기반으로 안전한 case_id 생성"""
+        # case_name + doc_id 조합으로 고유성 최대화
         unique_str = f"{case_name}_{doc_id}".strip("_")
+        
+        # 해시 기반 ID 생성 (5자리 숫자)
         hash_value = abs(hash(unique_str)) % 100000
+        
+        # 0이 나오는 것을 방지 (최소 1000)
         return max(hash_value, 1000)
 
     def flexible_case_match(self, selected_case: str, doc_id: str, case_name: str) -> bool:
@@ -164,15 +237,17 @@ class ContractAnalysisOrchestrator:
             selected_case in doc_id or selected_case in case_name):
             return True
         
-        # 단어별 매칭
+        # 단어별 매칭 (더 유연함)
         selected_words = selected_case.split()
         doc_words = doc_id.split() + case_name.split()
+        
+        # 선택된 케이스의 주요 단어가 문서에 포함되는지
         matches = sum(1 for word in selected_words if any(word in doc_word for doc_word in doc_words))
         
-        return matches >= max(1, len(selected_words) // 2)
+        return matches >= max(1, len(selected_words) // 2)  # 절반 이상 매칭
 
     def extract_selected_documents(self, llm_result: SingleClauseAnalysisResult, law_docs: list, case_docs: list) -> tuple:
-        """LLM이 선택한 법령/판례 문서 추출"""
+        """LLM이 선택한 법령/판례 문서 추출 + 중복 제거 + 개선된 매칭"""
         selected_law_doc = None
         selected_case_docs = []
         seen_case_names = set()
@@ -184,6 +259,7 @@ class ContractAnalysisOrchestrator:
                 article = doc.metadata.get('조문번호', '')
                 clause = doc.metadata.get('항번호', '')
                 
+                # 법령 문자열 매칭 (유연한 매칭 적용)
                 doc_identifier = f"{law_name} 제{article}조"
                 if clause:
                     doc_identifier += f" 제{clause}항"
@@ -192,19 +268,21 @@ class ContractAnalysisOrchestrator:
                     selected_law_doc = doc
                     break
         
-        # 선택된 판례들 찾기
+        # 선택된 판례들 찾기 (개선된 매칭 + 중복 제거)
         for selected_case in llm_result.selected_cases:
-            if len(selected_case_docs) >= 3:
+            if len(selected_case_docs) >= 3:  # 최대 3개
                 break
                 
             for doc in case_docs:
                 doc_id = doc.metadata.get('doc_id', '')
                 case_name = doc.metadata.get('case_name', '')
                 
+                # 사건명으로 중복 체크
                 case_identifier = f"{case_name}_{doc_id}"
                 if case_identifier in seen_case_names:
                     continue
                 
+                # 개선된 유연한 매칭
                 if self.flexible_case_match(selected_case, doc_id, case_name):
                     selected_case_docs.append(doc)
                     seen_case_names.add(case_identifier)
@@ -246,7 +324,7 @@ class ContractAnalysisOrchestrator:
             try:
                 case_name = case_doc.metadata.get('case_name', '')
                 doc_id = case_doc.metadata.get('doc_id', '')
-                case_content = case_doc.page_content.strip()[:500]
+                case_content = case_doc.page_content.strip()[:500]  # 처음 500자만
                 
                 case_info = f"{case_name} ({doc_id})" if case_name else doc_id
                 
@@ -263,14 +341,13 @@ class ContractAnalysisOrchestrator:
                 case_explanations.append("판례 요약 중 오류가 발생했습니다.")
         
         return law_explanation, law_content, case_explanations
-
     async def analyze_single_clause(self, clause_content: str, clause_type: str, contract_info: dict) -> ClauseAnalysis:
-        """단일 조항 분석 + 상세 정보 포함"""
+        """단일 조항 분석 + 상세 정보 바로 포함"""
         try:
-            # 1. RAG 검색
+            # 1. RAG 검색 (법령 10개, 판례 10개)
             law_docs, case_docs = await self.search_for_clause(clause_content)
             
-            # 2. 검색 결과 포맷팅
+            # 2. 검색 결과를 프롬프트용 문자열로 포맷팅
             related_laws_str = self.formatter.format_law_documents_detailed(law_docs)
             related_cases_str = self.formatter.format_case_documents_detailed(case_docs)
             
@@ -292,17 +369,20 @@ class ContractAnalysisOrchestrator:
                 "related_cases_str": related_cases_str
             })
             
-            # 5. 결과 구성
+            # 5. 결과 구성 - 🔧 상세 정보 바로 포함
             legal_basis = None
             case_basis = []
             
             if not llm_result.result:  # 부적절한 경우에만
+                # LLM이 선택한 문서들 추출
                 selected_law_doc, selected_case_docs = self.extract_selected_documents(llm_result, law_docs, case_docs)
+                
+                # 6. 선택된 문서들 즉시 요약
                 law_explanation, law_content, case_explanations = await self.summarize_selected_documents(
                     clause_content, selected_law_doc, selected_case_docs
                 )
                 
-                # 법령 정보 구성
+                # 🔧 법령 정보 - 상세 정보 바로 포함
                 if selected_law_doc:
                     law_id = selected_law_doc.metadata.get("법령ID", "") or selected_law_doc.metadata.get("law_id", "")
                     law_id_int = int(law_id) if law_id and law_id.isdigit() else 0
@@ -310,11 +390,11 @@ class ContractAnalysisOrchestrator:
                     legal_basis = ClauseLegalBasis(
                         law_id=law_id_int,
                         law=llm_result.selected_law or "관련 법령",
-                        explanation=law_explanation,
-                        content=law_content
+                        explanation=law_explanation,  # 🔧 바로 포함
+                        content=law_content          # 🔧 바로 포함
                     )
                 
-                # 판례 정보 구성
+                # 🔧 판례 정보 - 상세 정보 바로 포함
                 for i, case_doc in enumerate(selected_case_docs):
                     doc_id = case_doc.metadata.get("doc_id", "")
                     case_name = case_doc.metadata.get("case_name", "")
@@ -326,8 +406,8 @@ class ContractAnalysisOrchestrator:
                     case_basis.append(ClauseCaseBasis(
                         case_id=case_id_int,
                         case=case_display,
-                        explanation=case_explanation,
-                        link=f"data/case/{case_id_int}"
+                        explanation=case_explanation,  # 🔧 바로 포함
+                        link=f"data/case/{case_id_int}"  # 🔧 바로 포함
                     ))
             
             return ClauseAnalysis(
@@ -343,7 +423,7 @@ class ContractAnalysisOrchestrator:
         except Exception as e:
             print(f"❌ 조항 분석 에러: {e}")
             return ClauseAnalysis(
-                result=True,
+                result=True,  # 에러시 안전하게 적절로 처리
                 content=clause_content,
                 reason="분석 중 오류가 발생했습니다. 전문가 상담을 권장합니다.",
                 suggested_revision=None,
@@ -353,17 +433,19 @@ class ContractAnalysisOrchestrator:
             )
     
     async def analyze_contract(self, input_data: ContractAnalysisInput) -> ContractAnalysisOutput:
-        """메인 실행 함수"""
+        """메인 실행 함수 - 🔧 전체 요약 제거"""
         start_time = time.time()
         
         try:
-            # 1. 계약서 정보 추출
+            # 1. 계약서 파싱
+            contract_summary = self.create_contract_summary(input_data.contract_data)
             contract_info = extract_key_contract_info(input_data.contract_data)
+            
             clauses = extract_contract_clauses(input_data.contract_data)
             articles = clauses.get("articles", [])
             agreements = clauses.get("agreements", [])
             
-            # 2. 조항별 분석 (병렬 처리)
+            # 2. 조항별 개별 분석 (병렬 처리)
             article_tasks = [
                 self.analyze_single_clause(article, "article", contract_info) 
                 for article in articles
@@ -373,10 +455,17 @@ class ContractAnalysisOrchestrator:
                 for agreement in agreements
             ]
             
+            # 병렬 실행
             article_results = await asyncio.gather(*article_tasks)
             agreement_results = await asyncio.gather(*agreement_tasks)
             
-            # 3. 결과 조립
+            # 3. 🔧 전체 요약 제거 - 이제 조항별로 상세 정보가 포함됨
+            # (별도 저장소 관련 코드 제거)
+            
+            # 4. 추가 권고 특약 (임시로 빈 리스트)
+            recommended_agreements = []
+            
+            # 5. 최종 결과 조립
             generation_time = round(time.time() - start_time, 2)
             
             return ContractAnalysisOutput(
@@ -386,7 +475,10 @@ class ContractAnalysisOrchestrator:
                 created_date=datetime.now().isoformat(),
                 articles=article_results,
                 agreements=agreement_results,
-                recommended_agreements=[],
+                recommended_agreements=recommended_agreements,
+                # 🔧 전체 요약 제거
+                # legal_basis=[],
+                # case_basis=[],
                 analysis_metadata=AnalysisMetadata(generation_time=generation_time)
             )
             
@@ -406,6 +498,9 @@ class ContractAnalysisOrchestrator:
             articles=[],
             agreements=[],
             recommended_agreements=[],
+            # 🔧 전체 요약 제거
+            # legal_basis=[],
+            # case_basis=[],
             analysis_metadata=AnalysisMetadata(generation_time=generation_time)
         )
 
