@@ -5,14 +5,23 @@ Author: ooheunsu
 Date: 2025-06-16
 Requirements: python-dotenv, langchain-anthropic, langchain-openai, langchain-chroma, pydantic, asyncio, json, re, os
 """
+# ml/src/services/contract_terms_chain.py 파일 상단 import 부분 수정
+
+# ❌ 현재 (잘못된 import)
+# from langchain_chroma import Chroma
+# from langchain_openai import OpenAIEmbeddings
+
+# ✅ 수정된 import (이렇게 변경하세요)
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import OpenAIEmbeddings
+
+# 나머지 import들은 그대로 유지
 from langchain_anthropic import ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.output_parsers import PydanticOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import BaseOutputParser
-from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
 from typing import List, Dict, Any, Set
 import asyncio
 import json
@@ -20,7 +29,23 @@ import re
 import os
 from dotenv import load_dotenv
 
-from contract_schema import ContractInput, ContractOutput, RecommendedAgreement, LegalBasis, CaseBasis
+from .schema.terms_schema import ContractInput, ContractOutput, RecommendedAgreement, LegalBasis, CaseBasis
+# from langchain_anthropic import ChatAnthropic
+# from langchain.prompts import ChatPromptTemplate
+# from langchain.schema import HumanMessage, SystemMessage
+# from langchain.output_parsers import PydanticOutputParser
+# from langchain.schema.runnable import RunnablePassthrough
+# from langchain.schema.output_parser import BaseOutputParser
+# from langchain_chroma import Chroma
+# from langchain_openai import OpenAIEmbeddings
+# from typing import List, Dict, Any, Set
+# import asyncio
+# import json
+# import re
+# import os
+# from dotenv import load_dotenv
+
+# from .schema.terms_schema import ContractInput, ContractOutput, RecommendedAgreement, LegalBasis, CaseBasis
 
 # 환경변수 로드
 load_dotenv()

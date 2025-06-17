@@ -1,9 +1,94 @@
+# 🔐 환경변수 및 보안 파일 (절대 커밋하면 안됨!)
 .env
+.env.*
+.env.local
+.env.production
+.env.development
+config/secrets.json
+secrets/
+credentials/
+*.pem
+*.key
 
-# 벡터DB는 커밋 대상에서 제외
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*$py.class
+*.so
+.Python
+*.pkl
+*.db
+*.sqlite
+*.sqlite3
+*.egg
+*.egg-info/
+.installed.cfg
+MANIFEST
+
+# 🧪 테스트 / 빌드 / 린트
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+.cache/
+coverage.*
+.mypy_cache/
+*.cover
+
+# 📊 로그 파일
+*.log
+logs/
+
+# 🔧 개발 도구
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 💾 패키지/의존성
+node_modules/
+.npm
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+build/
+dist/
+downloads/
+develop-eggs/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+
+# ☁️ 클라우드 설정
+.aws/
+.gcp/
+
+# 📓 Jupyter 노트북
+*.ipynb
+.ipynb_checkpoints/
+
+# 📦 LangChain + Chroma + DB 관련
+vectordb/
 vectordb/chroma_case/
 vectordb/chroma_law/
+chroma_*/  
+*.chroma.db
+index_store/
+*.faiss
+law_output/
 
-
-
-__pycache__
+# 📱 OS / 시스템 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

@@ -13,13 +13,13 @@ import time
 import logging
 from datetime import datetime
 
-from contract_schema import (
+from services.schema.terms_schema import (
     ContractInput, 
     ContractOutput, 
     ContractResponse, 
     ErrorResponse
 )
-from contract_service import generate_special_terms
+from services.contract_terms_chain import generate_special_terms
 
 # 로거 설정
 logging.basicConfig(level=logging.INFO)
