@@ -1,2 +1,0 @@
-rootProject.name = "SuperLawVA"
-include "back", "front", "ml"
