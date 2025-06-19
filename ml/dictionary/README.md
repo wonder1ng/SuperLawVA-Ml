@@ -4,17 +4,13 @@
 ## 🎯 프로젝트 개요
 법제처 공공 API를 활용하여 법령 용어를 수집하고, AI(Gemini)를 통해 쉬운 설명을 생성하는 자동화 시스템입니다. 특히 부동산/임대차 계약 관련 용어에 특화되어 있습니다.
 
-## ✨ 주요 기능
-- 📖 법령용어 자동 수집: 법제처 API를 통한 전체 법령 용어 크롤링
-- 🤖 AI 기반 쉬운 설명 생성: Gemini AI를 활용한 초등학생도 이해할 수 있는 용어 설명
-- 💾 데이터 안전 저장: 중간 저장 기능으로 데이터 손실 방지
-- 🔄 재시작 기능: 중단된 지점부터 다시 시작 가능
 
 ## 🏗️ 폴더 구조
 📁 dictionary
 ├── 📄 crawling_definition.py    # 1단계: 법제처 API 크롤링
 ├── 📄 easy_term.py             # 2단계: AI를 통한 쉬운 설명 생성
 └── 📄 README.md               # 프로젝트 문서
+
 
 ## 🚀 사용 방법
 1단계: 법령 용어 수집 (crawling_definition.py)
@@ -27,6 +23,7 @@ Gemini AI를 활용하여 수집된 법령 용어에 대한 쉬운 설명을 생
 python# Gemini API 키 설정
 genai.configure(api_key="your_gemini_api_key")
 
+
 ## 🛠️ 기술 스택
 Python 3.x
 requests: HTTP API 통신
@@ -34,6 +31,7 @@ BeautifulSoup4: XML 파싱
 pandas: 데이터 처리
 google-generativeai: Gemini AI 연동
 csv: 데이터 저장
+
 
 ## ⚙️ 설정 방법
 1. 법제처 API 키 발급
