@@ -26,10 +26,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # APIRouter 인스턴스 생성
-router = APIRouter(
-    prefix="/api/v1/contract",
-    tags=["계약서 특약사항"]
-)
+router = APIRouter()
 
 
 @router.post(
