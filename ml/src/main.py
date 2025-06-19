@@ -171,13 +171,13 @@ app.add_middleware(
 
 # 라우터 등록
 if letter_router:
-    app.include_router(letter_router, prefix="/api/v2", tags=["📝 내용증명 생성"])
+    app.include_router(letter_router, prefix="/api/v1", tags=["📝 내용증명 생성"])
 
 if analyze_router:
-    app.include_router(analyze_router, prefix="/api/v2", tags=["🔍 계약서 검토"])
+    app.include_router(analyze_router, prefix="/api/v1", tags=["🔍 계약서 검토"])
 
 if contract_router:
-    app.include_router(contract_router, tags=["⚖️ 특약사항 생성"])
+    app.include_router(contract_router, prefix="/api/v1/contract", tags=["⚖️ 특약사항 생성"])
 
 # 루트 엔드포인트
 @app.get("/", tags=["🏠 기본 정보"])
