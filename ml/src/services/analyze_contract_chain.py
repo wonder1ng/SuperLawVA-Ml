@@ -2,6 +2,7 @@
 [analyze_contract_chain.py] - 계약서 검토 생성 체인 (조항별 개별 분석 + 즉시 요약)
 
 조항별로 RAG 검색 → LLM 판단 → 즉시 요약 → 결과 조립 방식
+실제 메타데이터 case_id 사용으로 수정
 """
 
 import time
@@ -46,7 +47,7 @@ class SingleClauseAnalysisResult(BaseModel):
 llm = get_claude_llm_for_review()
 output_parser = PydanticOutputParser(pydantic_object=SingleClauseAnalysisResult)
 
-# 조항별 분석 프롬프트 템플릿 (근본적 수정)
+# 조항별 분석 프롬프트 템플릿
 clause_analysis_prompt = ChatPromptTemplate.from_template("""
 당신은 25년 경력의 임대차 전문 변호사입니다.
 다음 계약 조항을 **계약서 전체 맥락**을 고려하여 객관적으로 검토해주세요.
@@ -158,7 +159,7 @@ law_summary_chain = law_summary_prompt | llm
 case_summary_chain = case_summary_prompt | llm
 
 class ContractAnalysisOrchestrator:
-    """계약서 검토 오케스트레이터 (조항별 개별 분석 + 즉시 요약)"""
+    """계약서 검토 오케스트레이터 (실제 case_id 사용)"""
     
     def __init__(self):
         self.llm = llm
@@ -171,10 +172,6 @@ class ContractAnalysisOrchestrator:
         self.legal_processor = LegalProcessor(self.llm)
         self.case_processor = CaseProcessor(self.llm)
         self.formatter = DocumentFormatter()
-        
-        # 🔧 별도 저장소 제거 (더 이상 필요 없음)
-        # self.law_summaries = {}
-        # self.case_summaries = {}  # {case_id: {"case": "...", "explanation": "..."}}
     
     def create_contract_summary(self, contract_data: dict) -> str:
         """계약서 요약 생성"""
@@ -215,16 +212,19 @@ class ContractAnalysisOrchestrator:
         
         return law_docs, case_docs
     
-    def extract_case_id_from_doc_id(self, doc_id: str, case_name: str = "") -> int:
-        """해시 기반으로 안전한 case_id 생성"""
-        # case_name + doc_id 조합으로 고유성 최대화
-        unique_str = f"{case_name}_{doc_id}".strip("_")
+    def extract_case_id_from_metadata(self, case_doc) -> int:
+        """메타데이터에서 실제 case_id 추출 (해시 생성 대신)"""
+        case_id = case_doc.metadata.get("case_id", "")
         
-        # 해시 기반 ID 생성 (5자리 숫자)
-        hash_value = abs(hash(unique_str)) % 100000
+        # 실제 case_id가 있으면 사용
+        if case_id and str(case_id).strip():
+            try:
+                return int(case_id)
+            except ValueError:
+                pass
         
-        # 0이 나오는 것을 방지 (최소 1000)
-        return max(hash_value, 1000)
+        # case_id가 없거나 변환 실패시 0 반환
+        return 0
 
     def flexible_case_match(self, selected_case: str, doc_id: str, case_name: str) -> bool:
         """유연한 판례 매칭"""
@@ -341,8 +341,9 @@ class ContractAnalysisOrchestrator:
                 case_explanations.append("판례 요약 중 오류가 발생했습니다.")
         
         return law_explanation, law_content, case_explanations
+    
     async def analyze_single_clause(self, clause_content: str, clause_type: str, contract_info: dict) -> ClauseAnalysis:
-        """단일 조항 분석 + 상세 정보 바로 포함"""
+        """단일 조항 분석 + 상세 정보 바로 포함 (실제 case_id 사용)"""
         try:
             # 1. RAG 검색 (법령 10개, 판례 10개)
             law_docs, case_docs = await self.search_for_clause(clause_content)
@@ -369,7 +370,7 @@ class ContractAnalysisOrchestrator:
                 "related_cases_str": related_cases_str
             })
             
-            # 5. 결과 구성 - 🔧 상세 정보 바로 포함
+            # 5. 결과 구성 - 상세 정보 바로 포함
             legal_basis = None
             case_basis = []
             
@@ -382,7 +383,7 @@ class ContractAnalysisOrchestrator:
                     clause_content, selected_law_doc, selected_case_docs
                 )
                 
-                # 🔧 법령 정보 - 상세 정보 바로 포함
+                # 법령 정보 - 상세 정보 바로 포함
                 if selected_law_doc:
                     law_id = selected_law_doc.metadata.get("법령ID", "") or selected_law_doc.metadata.get("law_id", "")
                     law_id_int = int(law_id) if law_id and law_id.isdigit() else 0
@@ -390,24 +391,25 @@ class ContractAnalysisOrchestrator:
                     legal_basis = ClauseLegalBasis(
                         law_id=law_id_int,
                         law=llm_result.selected_law or "관련 법령",
-                        explanation=law_explanation,  # 🔧 바로 포함
-                        content=law_content          # 🔧 바로 포함
+                        explanation=law_explanation,
+                        content=law_content
                     )
                 
-                # 🔧 판례 정보 - 상세 정보 바로 포함
+                # 판례 정보 - 실제 case_id 사용
                 for i, case_doc in enumerate(selected_case_docs):
                     doc_id = case_doc.metadata.get("doc_id", "")
                     case_name = case_doc.metadata.get("case_name", "")
                     
-                    case_id_int = self.extract_case_id_from_doc_id(doc_id, case_name)
+                    # 실제 메타데이터에서 case_id 추출 (해시 생성 제거)
+                    case_id_int = self.extract_case_id_from_metadata(case_doc)
                     case_display = f"{case_name} ({doc_id})" if case_name else doc_id
                     case_explanation = case_explanations[i] if i < len(case_explanations) else "판례 요약 없음"
                     
                     case_basis.append(ClauseCaseBasis(
-                        case_id=case_id_int,
+                        case_id=case_id_int,  # 실제 메타데이터 case_id 사용
                         case=case_display,
-                        explanation=case_explanation,  # 🔧 바로 포함
-                        link=f"data/case/{case_id_int}"  # 🔧 바로 포함
+                        explanation=case_explanation,
+                        link=f"data/case/{case_id_int}"
                     ))
             
             return ClauseAnalysis(
@@ -433,7 +435,7 @@ class ContractAnalysisOrchestrator:
             )
     
     async def analyze_contract(self, input_data: ContractAnalysisInput) -> ContractAnalysisOutput:
-        """메인 실행 함수 - 🔧 전체 요약 제거"""
+        """메인 실행 함수"""
         start_time = time.time()
         
         try:
@@ -459,13 +461,10 @@ class ContractAnalysisOrchestrator:
             article_results = await asyncio.gather(*article_tasks)
             agreement_results = await asyncio.gather(*agreement_tasks)
             
-            # 3. 🔧 전체 요약 제거 - 이제 조항별로 상세 정보가 포함됨
-            # (별도 저장소 관련 코드 제거)
-            
-            # 4. 추가 권고 특약 (임시로 빈 리스트)
+            # 3. 추가 권고 특약 (임시로 빈 리스트)
             recommended_agreements = []
             
-            # 5. 최종 결과 조립
+            # 4. 최종 결과 조립
             generation_time = round(time.time() - start_time, 2)
             
             return ContractAnalysisOutput(
@@ -476,9 +475,6 @@ class ContractAnalysisOrchestrator:
                 articles=article_results,
                 agreements=agreement_results,
                 recommended_agreements=recommended_agreements,
-                # 🔧 전체 요약 제거
-                # legal_basis=[],
-                # case_basis=[],
                 analysis_metadata=AnalysisMetadata(generation_time=generation_time)
             )
             
@@ -498,9 +494,6 @@ class ContractAnalysisOrchestrator:
             articles=[],
             agreements=[],
             recommended_agreements=[],
-            # 🔧 전체 요약 제거
-            # legal_basis=[],
-            # case_basis=[],
             analysis_metadata=AnalysisMetadata(generation_time=generation_time)
         )
 

@@ -15,14 +15,19 @@ class CaseProcessor:
     def __init__(self, llm):
         self.llm = llm
     
+    def _extract_case_id(self, case_doc) -> str:
+        """메타데이터에서 case_id 추출"""
+        case_id = case_doc.metadata.get("case_id", "")
+        return str(case_id) if case_id is not None else ""
+    
     async def analyze_case_for_letter(self, case_doc, user_query: str, contract_summary: str) -> CaseSummary:
         """내용증명용 판례 분석"""
         doc_id = case_doc.metadata.get("doc_id", "미상")
         case_name = case_doc.metadata.get("case_name", "")
         case_text = case_doc.page_content.strip().replace("\n", " ")
         
-        # 실제 판례ID 추출
-        case_id = case_doc.metadata.get("case_id", "") or case_doc.metadata.get("판례ID", "")
+        # 실제 판례ID 추출 (수정됨)
+        case_id = self._extract_case_id(case_doc)
         
         case_prompt = f"""
         다음 판례를 사용자 상황과 연관하여 2-3문장으로 요약하고,
@@ -62,7 +67,9 @@ class CaseProcessor:
         doc_id = case_doc.metadata.get("doc_id", "미상")
         case_name = case_doc.metadata.get("case_name", "")
         case_text = case_doc.page_content.strip().replace("\n", " ")
-        case_id = case_doc.metadata.get("case_id", "") or case_doc.metadata.get("판례ID", "")
+        
+        # 실제 판례ID 추출 (수정됨)
+        case_id = self._extract_case_id(case_doc)
         
         review_prompt = f"""
         다음 계약 조항과 유사한 문제로 발생한 분쟁 판례를 분석해주세요:
@@ -159,18 +166,32 @@ class CaseProcessor:
         return summary, reference_point
     
     def convert_to_case_basis(self, case_summaries: List[CaseSummary]) -> List[CaseBasis]:
-        """CaseSummary를 CaseBasis로 변환"""
+        """CaseSummary를 CaseBasis로 변환 (메타데이터의 실제 case_id 사용)"""
         case_basis = []
-        for i, summary in enumerate(case_summaries, 1):
+        for summary in case_summaries:
+            # 메타데이터의 실제 case_id 사용
+            case_id = self._get_valid_case_id(summary.case_id)
+            
             case_basis.append(
                 CaseBasis(
-                    case_id=300 + i,
+                    case_id=case_id,
                     case=f"{summary.case_name} ({summary.doc_id})",
                     explanation=summary.summary or "판례 설명",
-                    link=f"data/case/{300 + i}"
+                    link=f"data/case/{case_id}"
                 )
             )
         return case_basis
+
+    def _get_valid_case_id(self, case_id_str: str) -> int:
+        """case_id를 유효한 정수로 변환"""
+        if case_id_str and str(case_id_str).strip():
+            try:
+                return int(case_id_str)
+            except ValueError:
+                pass
+        
+        # case_id가 없거나 변환 실패시 0 반환
+        return 0
 
     # 기존 함수명 호환성 유지
     async def generate_case_summaries(self, case_docs: list, user_query: str, contract_summary: str) -> List[CaseSummary]:
@@ -183,11 +204,11 @@ class CaseProcessor:
 
 # 데이터 변환 유틸리티 함수들
 def convert_to_case_basis(case_summaries: List[CaseSummary]) -> List[CaseBasis]:
-    """내용증명용 CaseBasis 변환 (독립 함수)"""
+    """내용증명용 CaseBasis 변환 (독립 함수 - 실제 case_id 사용)"""
     case_basis = []
     for summary in case_summaries:
-        # 실제 case_id가 있으면 사용, 없으면 0
-        case_id = int(summary.case_id) if summary.case_id and summary.case_id.isdigit() else 0
+        # 메타데이터의 실제 case_id 사용
+        case_id = _get_valid_case_id(summary.case_id)
         
         case_basis.append(
             CaseBasis(
@@ -199,12 +220,26 @@ def convert_to_case_basis(case_summaries: List[CaseSummary]) -> List[CaseBasis]:
         )
     return case_basis
 
+def _get_valid_case_id(case_id_str: str) -> int:
+    """case_id를 유효한 정수로 변환 (독립 함수)"""
+    if case_id_str and str(case_id_str).strip():
+        try:
+            return int(case_id_str)
+        except ValueError:
+            pass
+    
+    # case_id가 없거나 변환 실패시 0 반환
+    return 0
+
 def convert_to_review_case_format(case_analyses: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """계약서 검토용 판례 형식 변환"""
     review_cases = []
     for analysis in case_analyses:
+        # 메타데이터의 실제 case_id 사용
+        case_id = _get_valid_case_id(analysis.get("case_id", ""))
+        
         review_cases.append({
-            "case_id": analysis.get("case_id", ""),
+            "case_id": case_id,
             "case_title": analysis.get("case_name", ""),
             "dispute_summary": analysis.get("dispute_cause", ""),
             "court_decision": analysis.get("judgment", ""),

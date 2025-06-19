@@ -12,7 +12,7 @@ from datetime import datetime
 
 # 법령 정보 스키마
 class LegalBasis(BaseModel):
-    law_id: Optional[str] = Field(None, description="법령 ID (법령DB에서 가져옴)")
+    law_id: Optional[int] = Field(None, description="법령 ID (법령DB에서 가져옴)")
     law: str = Field(..., description="참고한 법령명")
     explanation: str = Field(..., description="법령 해설 내용")
     content: str = Field(..., description="법령 원문")
@@ -20,7 +20,7 @@ class LegalBasis(BaseModel):
 
 # 판례 정보 스키마  
 class CaseBasis(BaseModel):
-    case_id: Optional[str] = Field(None, description="판례 ID (현재는 null)")
+    case_id: Optional[int] = Field(None, description="판례 ID")
     case: str = Field(..., description="참고한 판례명")
     explanation: str = Field(..., description="판례 요약")
     link: str = Field(..., description="원문 혹은 원문 링크")

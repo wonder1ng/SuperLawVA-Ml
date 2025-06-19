@@ -8,6 +8,34 @@ import re
 from typing import List, Set, Optional, Dict
 from services.schema.shared_schema import LegalReference, LegalBasis
 
+def normalize_law_name(law_name: str) -> str:
+        """
+        법령명을 정규화하여 매칭 성공률 향상
+        """
+        if not law_name:
+            return ""
+        
+        # 1. 공백 제거
+        normalized = law_name.replace(" ", "").strip()
+        
+        # 2. 다양한 중점 문자들을 통일 (가장 중요!)
+        normalized = normalized.replace("ㆍ", "·")  # 가운뎃점 → 중점
+        normalized = normalized.replace("∙", "·")   # bullet → 중점  
+        normalized = normalized.replace("•", "·")   # bullet → 중점
+        normalized = normalized.replace("․", "·")   # one dot leader → 중점
+        
+        # 3. 기타 특수문자 정규화
+        normalized = normalized.replace("～", "~")   # 전각 물결표 → 반각
+        normalized = normalized.replace("（", "(")   # 전각 괄호 → 반각
+        normalized = normalized.replace("）", ")")   # 전각 괄호 → 반각
+        
+        # 4. 하이픈 정규화
+        normalized = normalized.replace("－", "-")   # 전각 하이픈 → 반각
+        normalized = normalized.replace("—", "-")    # em dash → 하이픈
+        normalized = normalized.replace("–", "-")    # en dash → 하이픈
+        
+        return normalized
+
 class LegalProcessor:
     """법령 처리 공통 서비스 (수정된 버전)"""
     
@@ -26,68 +54,144 @@ class LegalProcessor:
         )
     
     def extract_referenced_laws(self, text: str) -> Set[str]:
-        """텍스트에서 인용된 법령 추출 (개선된 버전)"""
-        referenced_laws = set()
-        
-        print(f"[DEBUG] 법령 추출 시작...")
-        print(f"[DEBUG] 입력 텍스트 길이: {len(text)}")
-        
-        # 1. 개선된 패턴으로 먼저 매칭 (「」로 감싸진 법령)
-        improved_matches = list(self.improved_law_pattern.finditer(text))
-        print(f"[DEBUG] 개선된 패턴 매칭 결과: {len(improved_matches)}개")
-        
-        for match in improved_matches:
-            law = match.group("law").strip()
-            article = match.group("article")
-            clause = match.group("clause")
-            item = match.group("item")
+            """
+            텍스트에서 참조된 법령을 추출하되, 다른 법령 내용에 인용된 법령은 제외 (수정된 버전)
+            """
             
-            key = f"{law} 제{article}조"
-            if clause:
-                key += f" 제{clause}항"
-            if item:
-                key += f" 제{item}호"
-                
-            referenced_laws.add(key)
-            print(f"[DEBUG] 개선된 패턴으로 추출: {key}")
-        
-        # 2. 기존 패턴으로 추가 매칭 (누락된 것들 찾기)
-        original_matches = list(self.law_pattern.finditer(text))
-        print(f"[DEBUG] 기존 패턴 매칭 결과: {len(original_matches)}개")
-        
-        for match in original_matches:
-            law = match.group("law").strip()
-            article = match.group("article")
-            clause = match.group("clause")
-            item = match.group("item")
+            print(f"[DEBUG] 법령 추출 시작...")
+            print(f"[DEBUG] 입력 텍스트 길이: {len(text)}")
             
-            key = f"{law} 제{article}조"
-            if clause:
-                key += f" 제{clause}항"
-            if item:
-                key += f" 제{item}호"
+            # 1단계: 인용된 법령들 찾기 (다양한 인용 패턴 대응)
+            quoted_laws = self.find_quoted_laws(text)
+            
+            # 2단계: 모든 법령 추출 (기존 로직 사용)
+            all_laws = self.extract_all_laws_original(text)
+            
+            # 3단계: 인용된 법령들 제외 (부분 매칭으로 수정)
+            filtered_laws = set()
+            
+            for law in all_laws:
+                should_exclude = False
                 
-            referenced_laws.add(key)
-            print(f"[DEBUG] 기존 패턴으로 추출: {key}")
+                for quoted_law in quoted_laws:
+                    # 부분 문자열 매칭 (법령명 기준)
+                    if quoted_law in law:
+                        should_exclude = True
+                        print(f"[DEBUG] ✂️ 제외됨: '{law}' (인용된 법령: '{quoted_law}' 포함)")
+                        break
+                
+                if not should_exclude:
+                    filtered_laws.add(law)
+                    print(f"[DEBUG] ✅ 포함됨: '{law}'")
+            
+            print(f"[DEBUG] 전체 추출된 법령: {len(all_laws)}개")
+            print(f"[DEBUG] 인용으로 제외된 법령: {len(quoted_laws)}개 - {quoted_laws}")
+            print(f"[DEBUG] 최종 필터링된 법령: {len(filtered_laws)}개 - {filtered_laws}")
+            
+            return filtered_laws
+
+
+    def find_quoted_laws(self, text: str) -> Set[str]:
+        """
+        작은따옴표 안에 있는 모든 법령명 찾기 (개선된 버전)
+        """
+        quoted_laws = set()
         
-        print(f"[DEBUG] 최종 추출된 법령들: {referenced_laws}")
-        print(f"[DEBUG] 총 {len(referenced_laws)}개 법령 추출됨")
+        # 작은따옴표 안의 내용을 모두 추출
+        quote_pattern = r"'([^']*?)'"
+        matches = re.finditer(quote_pattern, text, re.DOTALL)
         
-        return referenced_laws
+        for match in matches:
+            quoted_text = match.group(1).strip()
+            print(f"[DEBUG] 따옴표 안 발견: '{quoted_text}'")
+            
+            # 따옴표 안에서 법령명 찾기 (개선된 패턴)
+            law_patterns = [
+                # 패턴 1: 「법령명」 형태
+                r'「([^」]+)」',
+                # 패턴 2: 법령명 (조항 제외하고 순수 법령명만)
+                r'([가-힣·\w\d\s]{2,}?(?:법|시행령|시행규칙))(?=\s|$|제|\s*에|\s*의)'
+            ]
+            
+            for i, pattern in enumerate(law_patterns):
+                law_matches = re.finditer(pattern, quoted_text)
+                for law_match in law_matches:
+                    law_name = law_match.group(1).strip()
+                    
+                    # 필터링: 의미없는 단어들 제외
+                    invalid_words = ['이', '에', '의', '을', '를', '과', '와', '임차인이', '에 따라 전입신고를 하는 경우 이']
+                    
+                    if (len(law_name) > 3 and 
+                        law_name not in invalid_words and 
+                        not any(word in law_name for word in invalid_words)):
+                        
+                        quoted_laws.add(law_name)
+                        print(f"[DEBUG] 패턴 {i+1}로 인용 법령 발견: {law_name}")
+        
+        return quoted_laws
+
+    def extract_all_laws_original(self, text: str) -> Set[str]:
+            """
+            기존 법령 추출 로직 (모든 법령 추출)
+            """
+            referenced_laws = set()
+            
+            # 1. 개선된 패턴으로 먼저 매칭 (「」로 감싸진 법령)
+            improved_matches = list(self.improved_law_pattern.finditer(text))
+            print(f"[DEBUG] 개선된 패턴 매칭 결과: {len(improved_matches)}개")
+            
+            for match in improved_matches:
+                law = match.group("law").strip()
+                article = match.group("article")
+                clause = match.group("clause")
+                item = match.group("item")
+                
+                key = f"{law} 제{article}조"
+                if clause:
+                    key += f" 제{clause}항"
+                if item:
+                    key += f" 제{item}호"
+                    
+                referenced_laws.add(key)
+                print(f"[DEBUG] 개선된 패턴으로 추출: {key}")
+            
+            # 2. 기존 패턴으로 추가 매칭 (누락된 것들 찾기)
+            original_matches = list(self.law_pattern.finditer(text))
+            print(f"[DEBUG] 기존 패턴 매칭 결과: {len(original_matches)}개")
+            
+            for match in original_matches:
+                law = match.group("law").strip()
+                article = match.group("article")
+                clause = match.group("clause")
+                item = match.group("item")
+                
+                key = f"{law} 제{article}조"
+                if clause:
+                    key += f" 제{clause}항"
+                if item:
+                    key += f" 제{item}호"
+                    
+                referenced_laws.add(key)
+                print(f"[DEBUG] 기존 패턴으로 추출: {key}")
+            
+            print(f"[DEBUG] 최종 추출된 법령들: {referenced_laws}")
+            print(f"[DEBUG] 총 {len(referenced_laws)}개 법령 추출됨")
+            
+            return referenced_laws
     
     async def generate_law_summary(self, full_text: str) -> str:
-        """법령 요약 생성 (모든 기능에서 사용)"""
-        summary_prompt = f"""
-        다음 법령 조문이 사용자에게 제공하는 권리나 법적 보호를 1-2문장으로 요약해주세요:
-        "{full_text}"
-        """
-        try:
-            response = await self.llm.ainvoke(summary_prompt)
-            return response.content.strip()
-        except Exception as e:
-            print(f"[DEBUG] 법령 요약 생성 오류: {e}")
-            return "법령 요약 생성 중 오류가 발생했습니다."
-    
+            """법령 요약 생성 (모든 기능에서 사용)"""
+            summary_prompt = f"""
+            다음 법령 조문이 사용자에게 제공하는 권리나 법적 보호를 1-2문장으로 요약해주세요:
+            "{full_text}"
+            """
+            try:
+                response = await self.llm.ainvoke(summary_prompt)
+                return response.content.strip()
+            except Exception as e:
+                print(f"[DEBUG] 법령 요약 생성 오류: {e}")
+                return "법령 요약 생성 중 오류가 발생했습니다."
+        
     def find_law_document(self, reference: str, law_docs: list):
         """참조된 법령에 해당하는 문서 찾기 (완전 수정 버전)"""
         print(f"[DEBUG] *** 완전 수정된 find_law_document 함수 실행 ***")
@@ -140,20 +244,21 @@ class LegalProcessor:
             return None
         
         # === 1단계: 법령명으로 필터링 ===
-        law_name_clean = law_name.replace(" ", "").strip()
+        law_name_normalized = normalize_law_name(law_name)
         matching_law_docs = []
         
-        print(f"[DEBUG] 1단계: 법령명 '{law_name_clean}' 필터링")
+        print(f"[DEBUG] 1단계: 법령명 '{law_name_normalized}' 필터링 (정규화 적용)")
         for i, doc in enumerate(law_docs):
-            doc_law_name = doc.metadata.get("법령명", "").replace(" ", "").strip()
-            print(f"[DEBUG] 문서 {i}: '{doc_law_name}' vs '{law_name_clean}'")
+            doc_law_name = doc.metadata.get("법령명", "")
+            doc_law_name_normalized = normalize_law_name(doc_law_name)
+            print(f"[DEBUG] 문서 {i}: '{doc_law_name_normalized}' vs '{law_name_normalized}'")
             
-            if doc_law_name == law_name_clean:
+            if doc_law_name_normalized == law_name_normalized:
                 matching_law_docs.append(doc)
-                print(f"[DEBUG] ✅ 법령명 매칭: {doc.metadata}")
+                print(f"[DEBUG] ✅ 법령명 매칭 (정규화): {doc.metadata}")
         
         if not matching_law_docs:
-            print(f"[DEBUG] ❌ 법령명 매칭 실패: {law_name_clean}")
+            print(f"[DEBUG] ❌ 법령명 매칭 실패 (정규화 후): {law_name_normalized}")
             return None
         
         print(f"[DEBUG] 1단계 결과: {len(matching_law_docs)}개 문서")

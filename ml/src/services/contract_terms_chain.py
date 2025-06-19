@@ -4,18 +4,12 @@ Description: 계약서 특약사항 생성 핵심 비즈니스 로직 및 벡터
 Author: ooheunsu
 Date: 2025-06-16
 Requirements: python-dotenv, langchain-anthropic, langchain-openai, langchain-chroma, pydantic, asyncio, json, re, os
+실제 메타데이터 case_id 사용으로 수정
 """
-# ml/src/services/contract_terms_chain.py 파일 상단 import 부분 수정
 
-# ❌ 현재 (잘못된 import)
-# from langchain_chroma import Chroma
-# from langchain_openai import OpenAIEmbeddings
-
-# ✅ 수정된 import (이렇게 변경하세요)
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OpenAIEmbeddings
 
-# 나머지 import들은 그대로 유지
 from langchain_anthropic import ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
@@ -30,24 +24,7 @@ import os
 from dotenv import load_dotenv
 
 from .schema.terms_schema import ContractInput, ContractOutput, RecommendedAgreement, LegalBasis, CaseBasis
-# from langchain_anthropic import ChatAnthropic
-# from langchain.prompts import ChatPromptTemplate
-# from langchain.schema import HumanMessage, SystemMessage
-# from langchain.output_parsers import PydanticOutputParser
-# from langchain.schema.runnable import RunnablePassthrough
-# from langchain.schema.output_parser import BaseOutputParser
-# from langchain_chroma import Chroma
-# from langchain_openai import OpenAIEmbeddings
-# from typing import List, Dict, Any, Set
-# import asyncio
-# import json
-# import re
-# import os
-# from dotenv import load_dotenv
 
-# from .schema.terms_schema import ContractInput, ContractOutput, RecommendedAgreement, LegalBasis, CaseBasis
-
-# 환경변수 로드
 load_dotenv()
 
 class CustomJSONOutputParser(BaseOutputParser[ContractOutput]):
@@ -76,21 +53,31 @@ class CustomJSONOutputParser(BaseOutputParser[ContractOutput]):
             parsed_data = json.loads(json_text)
             print("✅ JSON 파싱 성공")
             
-            # 3. law_id 타입 변환 (숫자 → 문자열)
+            # 3. law_id 타입 변환 (문자열 → 숫자)
             if 'legal_basis' in parsed_data:
                 for legal in parsed_data['legal_basis']:
                     if 'law_id' in legal and legal['law_id'] is not None:
                         original_id = legal['law_id']
-                        legal['law_id'] = str(legal['law_id'])
-                        print(f"🔄 law_id 변환: {original_id} → {legal['law_id']}")
+                        # 문자열을 int로 변환 (앞의 0들 자동 제거)
+                        try:
+                            legal['law_id'] = int(str(original_id)) if str(original_id).isdigit() else None
+                            print(f"🔄 law_id 변환: {original_id} → {legal['law_id']}")
+                        except (ValueError, TypeError):
+                            legal['law_id'] = None
+                            print(f"⚠️ law_id 변환 실패: {original_id} → None")
             
-            # 4. case_id 타입 변환 (숫자 → 문자열)
+            # 4. case_id 타입 변환 (문자열 → 숫자)
             if 'case_basis' in parsed_data:
                 for case in parsed_data['case_basis']:
                     if 'case_id' in case and case['case_id'] is not None:
                         original_id = case['case_id']
-                        case['case_id'] = str(case['case_id'])
-                        print(f"🔄 case_id 변환: {original_id} → {case['case_id']}")
+                        # 문자열을 int로 변환 (앞의 0들 자동 제거)
+                        try:
+                            case['case_id'] = int(str(original_id)) if str(original_id).isdigit() else None
+                            print(f"🔄 case_id 변환: {original_id} → {case['case_id']}")
+                        except (ValueError, TypeError):
+                            case['case_id'] = None
+                            print(f"⚠️ case_id 변환 실패: {original_id} → None")
             
             # 5. 불필요한 필드 제거 (created_date 등)
             filtered_data = {
@@ -130,7 +117,7 @@ class CustomJSONOutputParser(BaseOutputParser[ContractOutput]):
   ],
   "legal_basis": [
     {
-      "law_id": "012345",
+      "law_id": 1234,
       "law": "법령명 제○조 제○항",
       "explanation": "법령 설명",
       "content": "법령 원문"
@@ -138,7 +125,7 @@ class CustomJSONOutputParser(BaseOutputParser[ContractOutput]):
   ],
   "case_basis": [
     {
-      "case_id": "2024다315046",
+      "case_id": 1243,
       "case": "판례명",
       "explanation": "판례 설명 (임차인 관점에서)",
       "link": "판례 링크"
@@ -149,8 +136,8 @@ class CustomJSONOutputParser(BaseOutputParser[ContractOutput]):
 중요: 
 - 마크다운 ```json 블록을 사용하지 마세요
 - 순수 JSON만 출력하세요
-- law_id는 반드시 문자열로 작성하세요
-- case_id는 반드시 실제 판례 문서ID를 문자열로 작성하세요
+- law_id는 반드시 숫자로 작성하세요 (예: 1234)
+- case_id는 반드시 숫자로 작성하세요 (예: 5, 1234 등)
 """
 
 class VectorDBManager:
@@ -189,9 +176,9 @@ class VectorDBManager:
             else:
                 print(f"⚠️ 법령 DB 경로를 찾을 수 없습니다: {law_db_path}")
             
-            # 판례 데이터베이스 연결 (선택적)
+            # 판례 데이터베이스 연결
             case_db_path = os.getenv("CHROMA_CASE_DB_PATH", "./vectordb/chroma_case/chroma_openai_case")
-            case_collection_name = os.getenv("CASE_COLLECTION_NAME", "case_collection")
+            case_collection_name = os.getenv("CASE_COLLECTION_NAME", "case_chunks_openai")
             
             if os.path.exists(case_db_path):
                 self.case_db = Chroma(
@@ -248,17 +235,21 @@ class VectorDBManager:
                 print(f"🔍 법령 검색 결과 - 거리: {score:.4f}, 최대거리: {max_distance}")
                 
                 if score <= max_distance:
+                    # 법령ID를 정수로 변환
+                    law_id_str = doc.metadata.get("법령ID", "") or doc.metadata.get("law_id", "")
+                    law_id_int = int(law_id_str) if law_id_str and str(law_id_str).isdigit() else None
+                    
                     law_info = {
                         "content": doc.page_content,
                         "metadata": doc.metadata,
                         "distance_score": score,
                         "law_name": doc.metadata.get("법령명", ""),
                         "article": self._format_article(doc.metadata),  # 조문 정보 포맷팅
-                        "law_id": doc.metadata.get("법령ID", None),
+                        "law_id": law_id_int,
                         "article_title": doc.metadata.get("조문제목", "")
                     }
                     relevant_laws.append(law_info)
-                    print(f"✅ 법령 추가: {law_info.get('law_name', 'Unknown')} {law_info.get('article', '')} - 거리: {score:.4f}")
+                    print(f"✅ 법령 추가: {law_info.get('law_name', 'Unknown')} {law_info.get('article', '')} - 거리: {score:.4f}, ID: {law_id_int}")
                 else:
                     print(f"❌ 법령 제외: 거리 너무 멀음 ({score:.4f} > {max_distance})")
             
@@ -269,7 +260,7 @@ class VectorDBManager:
             return []
     
     async def search_relevant_cases(self, query: str, k: int = 3) -> List[Dict]:
-        """관련 판례 검색 - 메타데이터 정보 풍부화"""
+        """관련 판례 검색 - 실제 메타데이터 case_id 사용"""
         if not self.case_db:
             return []
         
@@ -280,12 +271,19 @@ class VectorDBManager:
             for doc, score in search_results:
                 max_distance = float(os.getenv("MAX_DISTANCE", "1.5"))
                 if score <= max_distance:
+                    # case_id를 정수로 변환
+                    case_id_str = doc.metadata.get("case_id", "")
+                    case_id_int = int(case_id_str) if case_id_str and str(case_id_str).isdigit() else None
+                    
+                    doc_id = doc.metadata.get("doc_id", "")        # 판례번호 (별도)
+                    
                     case_info = {
                         "content": doc.page_content,
                         "metadata": doc.metadata,
                         "distance_score": score,
-                        # 실제 메타데이터에서 추출
-                        "case_id": doc.metadata.get("doc_id", None),  # ← doc_id를 case_id로 활용
+                        # 실제 메타데이터 case_id를 정수로 변환
+                        "case_id": case_id_int,
+                        "doc_id": doc_id,         # 판례번호는 별도 필드
                         "case_name": doc.metadata.get("case_name", ""),
                         "case_type": doc.metadata.get("case_type", ""),
                         "announce_date": doc.metadata.get("announce_date", ""),
@@ -294,7 +292,7 @@ class VectorDBManager:
                         "section": doc.metadata.get("section", "")
                     }
                     relevant_cases.append(case_info)
-                    print(f"✅ 판례 추가: [{case_info.get('case_id')}] {case_info.get('case_name')} - 거리: {score:.4f}")
+                    print(f"✅ 판례 추가: [case_id:{case_id_int}] [doc_id:{doc_id}] {case_info.get('case_name')} - 거리: {score:.4f}")
                 else:
                     print(f"❌ 판례 제외: 거리 너무 멀음 ({score:.4f} > {max_distance})")
             
@@ -355,13 +353,13 @@ class ContractService:
 
 ### 중요 지시사항
 **절대 준수 사항:**
-1. **law_id는 반드시 문자열로 작성하세요** ("012345" 형식)
-2. **case_id는 반드시 제공된 판례의 실제 문서ID를 사용하세요** ("2024다315046" 형식)
+1. **law_id는 반드시 숫자로 작성하세요** (예: 1234)
+2. **case_id는 반드시 숫자로 작성하세요** (예: 5, 1234 등)
 3. **특약사항에서 언급한 모든 법령은 반드시 legal_basis에 포함하세요**
 4. **마크다운 ```json 블록을 사용하지 마세요**
 5. **순수 JSON만 출력하세요**
-6. 제공된 법령 정보의 실제 법령ID를 law_id에 사용하세요
-7. 제공된 판례 정보의 실제 문서ID를 case_id에 사용하세요
+6. 제공된 법령 정보의 실제 법령ID(숫자)를 law_id에 사용하세요
+7. 제공된 판례 정보의 실제 case_id(숫자)를 사용하세요
 8. 검색된 법령/판례 내용을 그대로 사용하세요
 9. 제공된 법령 정보가 "관련 법령을 찾을 수 없습니다"인 경우에만 legal_basis는 빈 배열 []로 반환하세요
 10. 제공된 판례 정보가 "관련 판례를 찾을 수 없습니다"인 경우에만 case_basis는 빈 배열 []로 반환하세요  
@@ -382,24 +380,24 @@ class ContractService:
 
 → legal_basis에 반드시 포함:
 {{
-  "law_id": "검색된ID" 또는 null,
+  "law_id": 1248,
   "law": "주택임대차보호법 제7조",
   "explanation": "임대료 증액을 연 5% 이내로 제한하여...",
-  "content": "검색된 내용" 또는 "일반적 설명"
+  "content": "검색된 내용"
 }}
 
 ### 검색된 법령 활용 예시
-검색된 법령이 "법령ID: 012345, 법령명: 공동주택관리법"인 경우:
-- law_id: "012345" (반드시 실제 ID 사용)
+검색된 법령이 "법령ID: 3654, 법령명: 공동주택관리법"인 경우:
+- law_id: 3654 (숫자로)
 - law: "공동주택관리법 제20조 제1항" (검색된 조문 그대로)
 - content: 검색된 법령 텍스트 그대로 사용
 
 ### 검색된 판례 활용 예시
-검색된 판례가 "문서ID: 2024다315046, 판례명: 차임증액"인 경우:
-- case_id: "2024다315046" (반드시 실제 문서ID 사용)
-- case: "차임증액" (검색된 판례명 그대로)
+검색된 판례가 "case_id: 2034, doc_id: 2024다315046, 판례명: 차임증액"인 경우:
+- case_id: 2034 (숫자로)
+- case: "차임증액 (2024다315046)" (판례명과 판례번호 조합)
 - explanation: 판결요지와 내용을 바탕으로 임차인 관점에서 설명
-- link: "case/2024da315046" (문서ID 기반 링크)
+- link: "case/2034" (case_id 기반 링크)
 
 ### 주요 업무 (Task)
 사용자의 요청사항을 분석하여 **임차인에게 유리한 특약사항**을 생성하고, 법적 근거를 제시합니다.
@@ -421,33 +419,6 @@ class ContractService:
 2. **특약사항 생성**: 임차인 보호 관점에서 적절한 특약 조건 도출  
 3. **법적 근거 제시**: 관련 법령과 판례를 통한 근거 마련
 4. **협상 전략 제안**: 실무적인 협상 포인트 제시
-
-### 출력 형식 예시 (Examples)
-{{
-  "recommended_agreements": [
-    {{
-      "reason": "임차인의 원상복구 의무 범위를 명확히 하여 과도한 비용 부담 방지",
-      "suggested_revision": "통상적인 사용으로 인한 자연 마모는 원상복구 대상에서 제외한다",
-      "negotiation_points": "입주 시 현황 사진 촬영 및 체크리스트 작성으로 입증 자료 확보"
-    }}
-  ],
-  "legal_basis": [
-    {{
-      "law_id": "012345",
-      "law": "공동주택관리법 제20조 제1항",
-      "explanation": "법령 설명",
-      "content": "법령 원문"
-    }}
-  ],
-  "case_basis": [
-    {{
-      "case_id": "2024다315046",
-      "case": "차임증액",
-      "explanation": "임대차 관련 판례로, 임차인의 차임증액 저항권을 보여주는 사례",
-      "link": "case/2024da315046"
-    }}
-  ]
-}}
 
 ### 입력 데이터 구분자
 사용자 요청사항: {user_query}
@@ -472,21 +443,23 @@ class ContractService:
 ### 지시사항
 1. 위 요청사항들을 분석하여 임차인에게 유리한 특약사항을 생성하세요
 2. 제공된 법령과 판례 정보를 적극적으로 활용하세요
-3. **판례의 실제 문서ID를 case_id에 반드시 사용하세요**
-4. **법령의 실제 법령ID를 law_id에 반드시 사용하세요**
+3. **판례의 실제 case_id(숫자)를 반드시 사용하세요**
+4. **법령의 실제 법령ID(숫자)를 law_id에 반드시 사용하세요**
 5. 각 특약마다 관련 법령과 판례 근거를 제시하세요  
 6. 실제 협상에서 활용할 수 있는 구체적인 전략을 제안하세요
 7. 반드시 JSON 형식으로만 응답하세요 (마크다운 블록 금지)
 
 ### 판례 활용 가이드
-- 제공된 판례 정보에서 문서ID, 판례명, 판결요지를 정확히 활용하세요
+- 제공된 판례 정보에서 case_id(숫자), 판례명, 판결요지를 정확히 활용하세요
+- case_id는 반드시 메타데이터의 case_id 숫자를 사용하세요
 - 판례의 임차인 보호 측면을 강조하여 설명하세요
-- 판례 링크는 "case/문서ID"에서 특수문자 제거한 형태로 생성하세요
+- 판례 링크는 "case/case_id" 형태로 생성하세요
 
 ### 일관성 체크리스트
 응답 전 다음을 반드시 확인하세요:
 □ 특약에서 "○○법 제○조"라고 언급한 모든 법령이 legal_basis에 포함되었는가?
 □ legal_basis의 모든 법령이 특약사항 또는 검색 결과와 관련이 있는가?
+□ case_id와 law_id는 모두 숫자로 작성했는가?
 
 ### 출력 형식
 {format_instructions}
@@ -594,7 +567,8 @@ class ContractService:
             case_text = f"""
 [판례 {i}]
 판례명: {case.get('case_name', '알 수 없음')}
-문서ID: {case.get('case_id', 'N/A')}
+case_id: {case.get('case_id', 'N/A')}  # 숫자 형태
+doc_id: {case.get('doc_id', 'N/A')}    # 판례번호 (별도)
 사건유형: {case.get('case_type', '알 수 없음')}
 판결일: {case.get('announce_date', '알 수 없음')}
 접수년도: {case.get('receipt_year', '알 수 없음')}
@@ -635,6 +609,7 @@ class ContractService:
             legal_basis=[fallback_legal],
             case_basis=[fallback_case]
         )
+    
     def extract_mentioned_laws(self, recommended_agreements) -> Set[str]:
         """생성된 특약사항에서 언급된 법령 추출"""
         
@@ -702,7 +677,7 @@ class ContractService:
             for missing_law in missing_laws:
                 print(f"🔍 누락 법령 검색 중: {missing_law}")
                 
-                # 🚀 _search_by_metadata_filter 직접 호출
+                # 메타데이터 필터링 검색
                 search_result = await self._search_by_metadata_filter(missing_law)
                 
                 if search_result:
@@ -710,7 +685,7 @@ class ContractService:
                     print(f"  ✅ 메타데이터 검색 성공: {search_result['law_name']}")
                     
                     legal_basis = LegalBasis(
-                        law_id=search_result.get('metadata', {}).get('법령ID'),
+                        law_id=search_result.get('law_id'),  # 이미 int로 변환됨
                         law=missing_law,
                         explanation=f"{missing_law}에 따른 임차인 권익 보호 규정",
                         content=search_result.get('content', '')[:300] + "..." if len(search_result.get('content', '')) > 300 else search_result.get('content', '')
@@ -837,9 +812,14 @@ class ContractService:
                                 if not db_호번호:
                                     match_score += 20
                             
+                            # 법령ID를 정수로 변환
+                            law_id_str = metadata.get("법령ID", "") or metadata.get("law_id", "")
+                            law_id_int = int(law_id_str) if law_id_str and str(law_id_str).isdigit() else None
+                            
                             candidates.append({
                                 'doc': doc,
                                 'metadata': metadata,
+                                'law_id': law_id_int,
                                 'match_score': match_score,
                                 'match_info': match_info,
                                 'description': f"제{db_조문번호}조" + 
@@ -854,19 +834,20 @@ class ContractService:
                             
                             print(f"         🏆 매칭 결과 Top 5:")
                             for i, candidate in enumerate(candidates[:5], 1):
-                                print(f"           {i}. {candidate['description']} (점수: {candidate['match_score']}, 매칭: {candidate['match_info']})")
+                                print(f"           {i}. {candidate['description']} (점수: {candidate['match_score']}, 매칭: {candidate['match_info']}, ID: {candidate['law_id']})")
                             
                             # 최고 점수 선택
                             best = candidates[0]
                             print(f"         🎯 최종 선택: {best['description']}")
                             print(f"         📋 상세 정보:")
-                            print(f"            법령ID: {best['metadata'].get('법령ID')}")
+                            print(f"            법령ID: {best['law_id']}")
                             print(f"            내용: {best['doc'][:150]}...")
                             
                             return {
                                 'content': best['doc'],
                                 'metadata': best['metadata'],
                                 'law_name': best['metadata'].get('법령명', base_law),
+                                'law_id': best['law_id'],  # 이미 int로 변환됨
                                 'distance_score': 0.0,
                                 'match_score': best['match_score']
                             }
