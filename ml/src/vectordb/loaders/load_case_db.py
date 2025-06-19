@@ -21,7 +21,8 @@ def load_case_vectorstore():
 
     vectorstore = Chroma(
         persist_directory="vectordb/chroma_case/chroma_openai_case",
-        embedding_function=embedding_model
+        embedding_function=embedding_model,
+        collection_name="case_chunks_openai"
     )
 
     return vectorstore
