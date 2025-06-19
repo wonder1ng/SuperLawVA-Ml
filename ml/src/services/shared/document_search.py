@@ -82,7 +82,7 @@ class DocumentSearchService:
         # 문제 판례는 더 엄격한 유사도 기준 적용
         case_docs = [
             doc for doc, score in case_docs_with_scores 
-            if score >= 0.8  # 더 높은 임계값
+            if score < 1.3  # 더 높은 임계값
         ][:limit]
         
         return case_docs
