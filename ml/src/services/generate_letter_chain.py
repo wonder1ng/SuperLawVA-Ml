@@ -48,7 +48,30 @@ letter_prompt = ChatPromptTemplate.from_template("""
 당사자 정보:
 {parties_info}
 
+🔍 **먼저 사용자 요청을 분석하세요:**
+
 사용자 요청: {user_query}
+
+**⚠️ 중요: 임대차 관련성 검증 필수**
+
+위 사용자 요청이 임대차(주택임대, 상가임대, 보증금, 월세, 전세, 집주인, 세입자, 계약해지, 수리 등)와 관련이 없다면, 
+아래 형식으로 안내 메시지를 JSON 형식으로 작성하세요:
+
+```json
+{{
+  "title": "임대차 관련 질문 요청",
+  "receiver_name": "시스템 안내",
+  "receiver_address": "해당 없음",
+  "receiver_detail_address": "",
+  "sender_name": "내용증명 생성 시스템", 
+  "sender_address": "해당 없음",
+  "sender_detail_address": "",
+  "body": "🚫 시스템 알림\\n\\n이 기능은 **임대차 관련 내용증명 생성 전용**입니다.\\n\\n현재 요청하신 \\"{user_query}\\"는 임대차와 관련이 없어 보입니다.\\n\\n**다시 임대차와 관련된 상황을 말씀해주세요:**\\n- 보증금/전세금을 안 돌려주는 문제\\n- 집주인이 수리를 안 해주는 문제\\n- 임대차 계약을 해지하고 싶은 문제\\n- 월세/관리비 관련 분쟁\\n- 기타 임대차 계약 위반 문제\\n\\n예시: \\"임차인인데 계약 끝났는데 보증금 500만원을 안 돌려줘서 내용증명 보내고 싶어요\\"",
+  "strategy_summary": "임대차 관련 질문을 요청드립니다.",
+  "followup_strategy": "임대차와 관련된 구체적인 상황을 다시 설명해주세요."
+}}
+```
+**✅ 임대차 관련 요청인 경우에만 아래 정보로 실제 내용증명을 작성하세요:**
 
 위 정보를 바탕으로 법적 효력이 있는 내용증명을 작성해주세요.                                                
 
@@ -58,13 +81,6 @@ letter_prompt = ChatPromptTemplate.from_template("""
 3. **주소 분리**: receiver_address에는 기본 주소만, receiver_detail_address에는 상세주소만 입력하세요
 4. **주소 정확성**: 임대부동산 주소와 당사자 실제 주소를 절대 혼동하지 마세요
 5. **완전한 정보**: 이름, 주소, 상세주소를 모두 정확히 매칭하여 입력하세요                                                
-
-**⚠️ 법령 인용 시 필수 준수사항:**
-1. **내용 명시 의무**: 법령을 인용할 때는 "~에 따르면", "~에서 규정하는 바와 같이" 다음에 반드시 해당 조문의 핵심 내용을 구체적으로 명시하세요
-   예시: "「주택임대차보호법」 제4조에 따르면 '임차인은 보증금 반환을 요구할 권리가 있다'고 규정하고 있으므로..."
-2. **관련성 검증**: 사용자 상황과 직접 관련 없는 법령은 절대 인용 금지
-3. **정확한 인용**: 「전체 법령명」 형식 사용, "동법", "같은 법" 등 축약 표현 금지
-4. **제시된 법령만 사용**: 위에 제시된 "관련 법령" 목록에 있는 법령만 인용하세요. 다른 법령은 절대 사용하지 마세요.
 
 **📝 어조 및 강도 설정:**
 - 협력적, 정중한 어조
@@ -87,10 +103,37 @@ letter_prompt = ChatPromptTemplate.from_template("""
 - 과도한 위협이나 불가능한 요구사항 배제
 - 실제 우체국 내용증명 우편 발송 가능한 형식과 문체
 - 객관적이고 감정적 표현 배제
-                                                 
+
+**📋 법령 인용 필수 규칙 (Law Citation Rules):**
+1. **완전한 법령명 사용 의무**: 법령을 인용할 때는 반드시 완전한 법령명을 「」 안에 명시하세요
+   - ✅ 올바른 예: "「조세특례제한법 시행령」 제97조", "「주택임대차보호법」 제16조"
+   - ❌ 잘못된 예: "같은 법 제97조", "동법 제16조", "상기 법률 제20조", "위 법령"
+
+2. **축약 표현 금지**: 다음과 같은 축약 표현을 절대 사용하지 마세요
+   - ❌ "같은 법", "동법", "상기 법률", "위 법령", "해당 법", "이 법"
+   - ❌ "앞서 언급한 법률", "전술한 법령", "상기한 법"
+
+3. **반복 인용 시에도 전체 법령명 사용**: 같은 법령을 여러 번 인용할 때도 매번 완전한 법령명을 사용하세요
+   - ✅ 올바른 예: "「조세특례제한법」 제96조... 또한 「조세특례제한법」 제97조..."
+   - ❌ 잘못된 예: "「조세특례제한법」 제96조... 또한 같은 법 제97조..."
+
+4. **🚨 제시된 법령만 사용 (절대 준수)**: 
+   - **반드시 위에 제시된 "관련 법령: {related_laws_str}" 목록에 있는 법령만 인용하세요**
+   - **절대로 법령을 임의로 생성하거나 추가하지 마세요**
+   - **관련 법령 목록이 "관련 법령을 찾을 수 없습니다"인 경우, 법령을 인용하지 마세요**
+   - **검색되지 않은 법령은 존재하지 않는 것으로 간주하고 절대 언급 금지**
+
+5. **법령명 정확성**: 법령명은 반드시 한국 법령 체계에 따라 정확하게 명시하세요
+   - 기본: "「○○법」 제○조"
+   - 항 포함: "「○○법」 제○조 제○항" 
+   - 호 포함: "「○○법」 제○조 제○항 제○호"
+   - 예시: "「주택임대차보호법」 제16조 제1항 제2호"
+                       
 🔴 **반드시 피해야 할 것들**:
-- 제공되지 않은 법령 언급
-- "동법", "같은 법", "상기 법률" 등 축약 표현
+- **🚨 절대 금지: 관련 법령 목록에 없는 법령 언급**
+- **🚨 절대 금지: 법령 임의 생성 또는 추가**
+- **🚨 절대 금지: "동법", "같은 법", "상기 법률" 등 축약 표현 사용**
+- **🚨 절대 금지: 검색되지 않은 법령의 존재 가정**
 - 임대부동산 주소와 당사자 주소 혼동
 - 과도한 법적 위협
 - 감정적이거나 주관적 표현
@@ -143,69 +186,30 @@ class LetterGenerationOrchestrator:
             lessor, lessee = extract_parties_info(input_data.contract_data)
             user_query = input_data.user_query
             
-            # 2. 당사자 정보 포맷팅 (새로 추가)
+            # 2. 당사자 정보 포맷팅
             parties_info = self.format_parties_info(lessor, lessee)
             
             # 3. 공통 서비스 사용 - 문서 검색
             law_docs, case_docs = await self.search_service.search_documents(user_query)
 
-            # === ChromaDB 구조 확인 디버깅 코드 추가 ===
-            print(f"[DEBUG] 검색된 law_docs 상세 정보:")
-            print(f"[DEBUG] law_docs 개수: {len(law_docs)}")
-
-            for i, doc in enumerate(law_docs[:3]):  # 처음 3개만 출력
-                print(f"[DEBUG] law_doc[{i}] 메타데이터:")
-                for key, value in doc.metadata.items():
-                    print(f"  {key}: {value}")
-                print(f"[DEBUG] law_doc[{i}] 내용 (처음 100자): {doc.page_content[:100]}...")
-                print("---")
-
-            # === 특정 법령 검색 테스트 ===
-            # 우리가 찾고 있는 법령이 실제로 ChromaDB에 있는지 확인
-            target_laws = [
-                "주택임대차계약증서의 확정일자 부여 및 정보제공에 관한 규칙",
-                "임차권등기명령 절차에 관한 규칙",
-                "주택임대차보호법"
-            ]
-
-            print(f"[DEBUG] 특정 법령 검색 테스트:")
-            for target_law in target_laws:
-                matching_docs = [doc for doc in law_docs if target_law in doc.metadata.get("법령명", "")]
-                print(f"'{target_law}' 관련 문서: {len(matching_docs)}개")
-                if matching_docs:
-                    print(f"  첫 번째 매칭 문서 메타데이터: {matching_docs[0].metadata}")
-
-            # === 메타데이터 키 확인 ===
-            all_keys = set()
-            for doc in law_docs:
-                all_keys.update(doc.metadata.keys())
-            print(f"[DEBUG] law_docs에서 사용된 모든 메타데이터 키들: {sorted(all_keys)}")
-            
             # 4. 공통 유틸 사용 - 프롬프트용 포맷팅
             related_laws_str = self.formatter.format_law_documents(law_docs)
             related_cases_str = self.formatter.format_case_documents(case_docs)
-
-            # === related_laws_str 내용 확인 디버깅 ===
-            print(f"[DEBUG] related_laws_str 내용:")
-            print(f"[DEBUG] related_laws_str 길이: {len(related_laws_str)}")
-            print(f"[DEBUG] related_laws_str 내용:\n{related_laws_str}")
-            print("=" * 50)
-
-            print(f"[DEBUG] related_cases_str 내용:")
-            print(f"[DEBUG] related_cases_str 길이: {len(related_cases_str)}")
-            print(f"[DEBUG] related_cases_str 내용:\n{related_cases_str}")
-            print("=" * 50)
             
-            # 5. 내용증명 특화 - LLM 체인 실행 (수정됨)
+            # 5. 내용증명 특화 - LLM 체인 실행
             temp_result = await self.letter_chain.ainvoke({
                 "related_laws_str": related_laws_str,
                 "related_cases_str": related_cases_str,
                 "contract_summary": contract_summary,
-                "parties_info": parties_info,  # 새로 추가된 당사자 정보
+                "parties_info": parties_info,
                 "user_query": user_query
             })
             
-            # 6. 내용증명 특화 - 본문에서 법령 추출
+            # ✅ 핵심 수정: 시스템 안내 메시지 체크 후 조기 반환
+            if self._is_system_guidance_message(temp_result):
+                return self._create_guidance_result(input_data, temp_result, start_time)
+            
+            # 6. 실제 내용증명인 경우에만 법령/판례 분석 진행
             referenced_laws = self.legal_processor.extract_referenced_laws(temp_result.body)
             
             # 7. 공통 서비스 사용 - 법령 분석
@@ -224,8 +228,8 @@ class LetterGenerationOrchestrator:
             generation_time = round(time.time() - start_time, 2)
             
             return LetterGenerationOutput(
-                id=100,  # 내용증명서 고유 ID
-                user_id=input_data.contract_data.get("user_id"),  # 계약서에서 user_id 가져오기
+                id=100,
+                user_id=input_data.contract_data.get("user_id"),
                 contract_id=input_data.contract_data.get("_id"),
                 created_date=datetime.now().isoformat(),
                 title=temp_result.title,
@@ -252,6 +256,53 @@ class LetterGenerationOrchestrator:
             
         except Exception as e:
             return self._create_fallback_result(input_data, start_time, e)
+
+    def _is_system_guidance_message(self, temp_result: TempLetterOutput) -> bool:
+        """시스템 안내 메시지인지 확인"""
+        # 방법 1: receiver_name으로 판단
+        if temp_result.receiver_name == "시스템 안내":
+            return True
+        
+        # 방법 2: body 내용으로 판단 (더 안전한 방법)
+        if "🚫 시스템 알림" in temp_result.body:
+            return True
+        
+        # 방법 3: title로 판단
+        if temp_result.title == "임대차 관련 질문 요청":
+            return True
+        
+        return False
+
+    def _create_guidance_result(self, input_data: LetterGenerationInput, temp_result: TempLetterOutput, start_time: float) -> LetterGenerationOutput:
+        """시스템 안내 메시지 전용 결과 생성 (법령/판례 분석 없음)"""
+        generation_time = round(time.time() - start_time, 2)
+        
+        return LetterGenerationOutput(
+            id=100,
+            user_id=input_data.contract_data.get("user_id"),
+            contract_id=input_data.contract_data.get("_id"),
+            created_date=datetime.now().isoformat(),
+            title=temp_result.title,
+            receiver=PersonInfo(
+                name=temp_result.receiver_name,
+                address=temp_result.receiver_address,
+                detail_address=temp_result.receiver_detail_address or ""
+            ),
+            sender=PersonInfo(
+                name=temp_result.sender_name,
+                address=temp_result.sender_address,
+                detail_address=temp_result.sender_detail_address or ""
+            ),
+            body=temp_result.body,
+            strategy_summary=temp_result.strategy_summary,
+            followup_strategy=temp_result.followup_strategy,
+            legal_basis=[],  # ✅ 빈 배열로 설정
+            case_basis=[],   # ✅ 빈 배열로 설정
+            certification_metadata=CertificationMetadata(
+                generation_time=generation_time
+            ),
+            user_query=input_data.user_query
+        )
     
     def _create_fallback_result(self, input_data, start_time, error):
         """에러 시 안전한 폴백 결과 생성"""
