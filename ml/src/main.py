@@ -335,7 +335,6 @@ async def not_found_handler(request, exc):
         }
     )
 
-
 # 메인 실행
 if __name__ == "__main__":
     # 환경변수에서 설정 읽기

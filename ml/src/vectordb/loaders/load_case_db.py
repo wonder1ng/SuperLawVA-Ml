@@ -7,8 +7,10 @@ search_case_chain.py 등 외부에서 import하여 사용합니다.
 
 import os
 from dotenv import load_dotenv
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
+# from langchain.vectorstores import Chroma
+# from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import OpenAIEmbeddings
 
 load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
