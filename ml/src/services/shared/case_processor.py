@@ -7,6 +7,14 @@
 
 import asyncio
 from typing import List, Dict, Any
+
+# config import 추가
+from config import (
+    CASE_TEXT_MAX_LENGTH,
+    CASE_SNIPPET_LENGTH,
+    CASE_SUMMARY_PREVIEW_LENGTH
+)
+
 from services.schema.shared_schema import CaseSummary, CaseBasis
 
 class CaseProcessor:
@@ -35,7 +43,7 @@ class CaseProcessor:
         
         사용자 질문: {user_query}
         계약 정보: {contract_summary}
-        판례 원문: {case_text[:1000]}
+        판례 원문: {case_text[:CASE_TEXT_MAX_LENGTH]}
         
         형식:
         **[요약]**
@@ -58,7 +66,7 @@ class CaseProcessor:
             case_name=case_name,
             summary=summary,
             reference_point=reference_point,
-            snippet=case_text[:300] + "...",
+            snippet=case_text[:CASE_SNIPPET_LENGTH] + "...",
             case_id=case_id
         )
     
@@ -75,7 +83,7 @@ class CaseProcessor:
         다음 계약 조항과 유사한 문제로 발생한 분쟁 판례를 분석해주세요:
         
         문제 조항: {problematic_clause}
-        판례 내용: {case_text[:1000]}
+        판례 내용: {case_text[:CASE_TEXT_MAX_LENGTH]}
         
         분석 결과를 다음 형식으로 작성해주세요:
         **[분쟁 원인]**
@@ -114,7 +122,7 @@ class CaseProcessor:
                 "dispute_cause": dispute_cause,
                 "judgment": judgment,
                 "implications": implications,
-                "case_summary": f"{case_name}: {dispute_cause[:100]}..."
+                "case_summary": f"{case_name}: {dispute_cause[:CASE_SUMMARY_PREVIEW_LENGTH]}..."
             }
             
         except:

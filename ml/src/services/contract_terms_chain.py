@@ -20,12 +20,26 @@ from typing import List, Dict, Any, Set
 import asyncio
 import json
 import re
-import os
-from dotenv import load_dotenv
+# import os
+# from dotenv import load_dotenv
 
 from .schema.terms_schema import ContractInput, ContractOutput, RecommendedAgreement, LegalBasis, CaseBasis
 
-load_dotenv()
+from config import (
+    CHROMA_LAW_DB_PATH,
+    CHROMA_CASE_DB_PATH,
+    LAW_COLLECTION_NAME,
+    CASE_COLLECTION_NAME,
+    OPENAI_API_KEY,
+    VECTOR_SEARCH_K,
+    MAX_DISTANCE,
+    ANTHROPIC_API_KEY
+)
+
+from src.vectordb.loaders.load_law_db import load_law_vectorstore
+from src.vectordb.loaders.load_case_db import load_case_vectorstore
+
+# load_dotenv()
 
 class CustomJSONOutputParser(BaseOutputParser[ContractOutput]):
     """JSON 마크다운 블록을 처리할 수 있는 커스텀 파서"""
@@ -140,25 +154,87 @@ class CustomJSONOutputParser(BaseOutputParser[ContractOutput]):
 - case_id는 반드시 숫자로 작성하세요 (예: 5, 1234 등)
 """
 
-class VectorDBManager:
-    """벡터 데이터베이스 관리 클래스"""
+# class VectorDBManager:
+#     """벡터 데이터베이스 관리 클래스"""
     
+#     def __init__(self):
+#         self.law_db = None
+#         self.case_db = None
+
+class VectorDBManager:
     def __init__(self):
-        self.law_db = None
-        self.case_db = None
+        self.law_db = load_law_vectorstore()
+        self.case_db = load_case_vectorstore()
         self._initialize_dbs()
     
+    # def _initialize_dbs(self):
+    #     """벡터 데이터베이스 초기화"""
+    #     try:
+    #         # 임베딩 모델 설정 (3072 차원 모델 사용)
+    #         embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+            
+    #         # 법령 데이터베이스 연결
+    #         law_db_path = os.getenv("CHROMA_LAW_DB_PATH", "./vectordb/chroma_law/chroma_openai_law")
+    #         law_collection_name = os.getenv("LAW_COLLECTION_NAME", "law_chunks_openai")
+            
+    #         if os.path.exists(law_db_path):
+    #             self.law_db = Chroma(
+    #                 persist_directory=law_db_path,
+    #                 embedding_function=embeddings,
+    #                 collection_name=law_collection_name
+    #             )
+    #             print(f"✅ 법령 DB 연결 완료: {law_db_path}")
+    #             print(f"📋 법령 컬렉션명: {law_collection_name}")
+                
+    #             # 컬렉션 정보 확인
+    #             try:
+    #                 collection_count = self.law_db._collection.count()
+    #                 print(f"📊 법령 데이터 개수: {collection_count}개")
+    #             except Exception as e:
+    #                 print(f"⚠️ 법령 컬렉션 정보 확인 실패: {e}")
+    #         else:
+    #             print(f"⚠️ 법령 DB 경로를 찾을 수 없습니다: {law_db_path}")
+            
+    #         # 판례 데이터베이스 연결
+    #         case_db_path = os.getenv("CHROMA_CASE_DB_PATH", "./vectordb/chroma_case/chroma_openai_case")
+    #         case_collection_name = os.getenv("CASE_COLLECTION_NAME", "case_chunks_openai")
+            
+    #         if os.path.exists(case_db_path):
+    #             self.case_db = Chroma(
+    #                 persist_directory=case_db_path,
+    #                 embedding_function=embeddings,
+    #                 collection_name=case_collection_name
+    #             )
+    #             print(f"✅ 판례 DB 연결 완료: {case_db_path}")
+    #             print(f"📋 판례 컬렉션명: {case_collection_name}")
+                
+    #             # 컬렉션 정보 확인
+    #             try:
+    #                 collection_count = self.case_db._collection.count()
+    #                 print(f"📊 판례 데이터 개수: {collection_count}개")
+    #             except Exception as e:
+    #                 print(f"⚠️ 판례 컬렉션 정보 확인 실패: {e}")
+    #         else:
+    #             print(f"⚠️ 판례 DB 경로를 찾을 수 없습니다: {case_db_path}")
+                
+    #     except Exception as e:
+    #         print(f"❌ 벡터DB 초기화 실패: {str(e)}")
+
     def _initialize_dbs(self):
         """벡터 데이터베이스 초기화"""
         try:
             # 임베딩 모델 설정 (3072 차원 모델 사용)
-            embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
-            
-            # 법령 데이터베이스 연결
-            law_db_path = os.getenv("CHROMA_LAW_DB_PATH", "./vectordb/chroma_law/chroma_openai_law")
-            law_collection_name = os.getenv("LAW_COLLECTION_NAME", "law_chunks_openai")
-            
-            if os.path.exists(law_db_path):
+            embeddings = OpenAIEmbeddings(
+                model="text-embedding-3-large",
+                openai_api_key=OPENAI_API_KEY
+            )
+            # ───────────────────────────────
+            # 법령 벡터스토어 로딩
+            # ───────────────────────────────
+            try:
+                law_db_path = str(CHROMA_LAW_DB_PATH)
+                law_collection_name = LAW_COLLECTION_NAME
+
                 self.law_db = Chroma(
                     persist_directory=law_db_path,
                     embedding_function=embeddings,
@@ -166,21 +242,21 @@ class VectorDBManager:
                 )
                 print(f"✅ 법령 DB 연결 완료: {law_db_path}")
                 print(f"📋 법령 컬렉션명: {law_collection_name}")
-                
-                # 컬렉션 정보 확인
                 try:
                     collection_count = self.law_db._collection.count()
                     print(f"📊 법령 데이터 개수: {collection_count}개")
                 except Exception as e:
                     print(f"⚠️ 법령 컬렉션 정보 확인 실패: {e}")
-            else:
-                print(f"⚠️ 법령 DB 경로를 찾을 수 없습니다: {law_db_path}")
-            
-            # 판례 데이터베이스 연결
-            case_db_path = os.getenv("CHROMA_CASE_DB_PATH", "./vectordb/chroma_case/chroma_openai_case")
-            case_collection_name = os.getenv("CASE_COLLECTION_NAME", "case_chunks_openai")
-            
-            if os.path.exists(case_db_path):
+            except Exception as e:
+                print(f"❌ 법령 DB 로딩 실패: {e}")
+
+            # ───────────────────────────────
+            # 판례 벡터스토어 로딩
+            # ───────────────────────────────
+            try:
+                case_db_path = str(CHROMA_CASE_DB_PATH)
+                case_collection_name = CASE_COLLECTION_NAME
+
                 self.case_db = Chroma(
                     persist_directory=case_db_path,
                     embedding_function=embeddings,
@@ -188,18 +264,17 @@ class VectorDBManager:
                 )
                 print(f"✅ 판례 DB 연결 완료: {case_db_path}")
                 print(f"📋 판례 컬렉션명: {case_collection_name}")
-                
-                # 컬렉션 정보 확인
                 try:
                     collection_count = self.case_db._collection.count()
                     print(f"📊 판례 데이터 개수: {collection_count}개")
                 except Exception as e:
                     print(f"⚠️ 판례 컬렉션 정보 확인 실패: {e}")
-            else:
-                print(f"⚠️ 판례 DB 경로를 찾을 수 없습니다: {case_db_path}")
-                
+            except Exception as e:
+                print(f"❌ 판례 DB 로딩 실패: {e}")
+
         except Exception as e:
-            print(f"❌ 벡터DB 초기화 실패: {str(e)}")
+            print(f"❌ 벡터DB 초기화 실패 (전체 에러): {e}")
+
     
     def _format_article(self, metadata: Dict) -> str:
         """조문 정보를 한국 법령 체계에 맞게 포맷팅"""
@@ -219,6 +294,45 @@ class VectorDBManager:
         
         return " ".join(parts) if parts else ""
     
+    # async def search_relevant_laws(self, query: str, k: int = 5) -> List[Dict]:
+    #     """관련 법령 검색"""
+    #     if not self.law_db:
+    #         return []
+        
+    #     try:
+    #         # 벡터 검색 실행
+    #         search_results = self.law_db.similarity_search_with_score(query, k=k)
+            
+    #         relevant_laws = []
+    #         for doc, score in search_results:
+    #             # 거리 기준으로 필터링 (낮을수록 유사함)
+    #             max_distance = float(os.getenv("MAX_DISTANCE", "1.5"))  # 거리 임계값
+    #             print(f"🔍 법령 검색 결과 - 거리: {score:.4f}, 최대거리: {max_distance}")
+                
+    #             if score <= max_distance:
+    #                 # 법령ID를 정수로 변환
+    #                 law_id_str = doc.metadata.get("법령ID", "") or doc.metadata.get("law_id", "")
+    #                 law_id_int = int(law_id_str) if law_id_str and str(law_id_str).isdigit() else None
+                    
+    #                 law_info = {
+    #                     "content": doc.page_content,
+    #                     "metadata": doc.metadata,
+    #                     "distance_score": score,
+    #                     "law_name": doc.metadata.get("법령명", ""),
+    #                     "article": self._format_article(doc.metadata),  # 조문 정보 포맷팅
+    #                     "law_id": law_id_int,
+    #                     "article_title": doc.metadata.get("조문제목", "")
+    #                 }
+    #                 relevant_laws.append(law_info)
+    #                 print(f"✅ 법령 추가: {law_info.get('law_name', 'Unknown')} {law_info.get('article', '')} - 거리: {score:.4f}, ID: {law_id_int}")
+    #             else:
+    #                 print(f"❌ 법령 제외: 거리 너무 멀음 ({score:.4f} > {max_distance})")
+            
+    #         return relevant_laws
+            
+    #     except Exception as e:
+    #         print(f"❌ 법령 검색 실패: {str(e)}")
+    #         return []
     async def search_relevant_laws(self, query: str, k: int = 5) -> List[Dict]:
         """관련 법령 검색"""
         if not self.law_db:
@@ -231,7 +345,7 @@ class VectorDBManager:
             relevant_laws = []
             for doc, score in search_results:
                 # 거리 기준으로 필터링 (낮을수록 유사함)
-                max_distance = float(os.getenv("MAX_DISTANCE", "1.5"))  # 거리 임계값
+                max_distance = MAX_DISTANCE  # ✅ config.py에서 가져온 상수 사용
                 print(f"🔍 법령 검색 결과 - 거리: {score:.4f}, 최대거리: {max_distance}")
                 
                 if score <= max_distance:
@@ -254,11 +368,54 @@ class VectorDBManager:
                     print(f"❌ 법령 제외: 거리 너무 멀음 ({score:.4f} > {max_distance})")
             
             return relevant_laws
-            
+        
         except Exception as e:
             print(f"❌ 법령 검색 실패: {str(e)}")
             return []
+
     
+    # async def search_relevant_cases(self, query: str, k: int = 3) -> List[Dict]:
+    #     """관련 판례 검색 - 실제 메타데이터 case_id 사용"""
+    #     if not self.case_db:
+    #         return []
+        
+    #     try:
+    #         search_results = self.case_db.similarity_search_with_score(query, k=k)
+            
+    #         relevant_cases = []
+    #         for doc, score in search_results:
+    #             max_distance = float(os.getenv("MAX_DISTANCE", "1.5"))
+    #             if score <= max_distance:
+    #                 # case_id를 정수로 변환
+    #                 case_id_str = doc.metadata.get("case_id", "")
+    #                 case_id_int = int(case_id_str) if case_id_str and str(case_id_str).isdigit() else None
+                    
+    #                 doc_id = doc.metadata.get("doc_id", "")        # 판례번호 (별도)
+                    
+    #                 case_info = {
+    #                     "content": doc.page_content,
+    #                     "metadata": doc.metadata,
+    #                     "distance_score": score,
+    #                     # 실제 메타데이터 case_id를 정수로 변환
+    #                     "case_id": case_id_int,
+    #                     "doc_id": doc_id,         # 판례번호는 별도 필드
+    #                     "case_name": doc.metadata.get("case_name", ""),
+    #                     "case_type": doc.metadata.get("case_type", ""),
+    #                     "announce_date": doc.metadata.get("announce_date", ""),
+    #                     "judgement": doc.metadata.get("judgement", ""),
+    #                     "receipt_year": doc.metadata.get("receipt_year", ""),
+    #                     "section": doc.metadata.get("section", "")
+    #                 }
+    #                 relevant_cases.append(case_info)
+    #                 print(f"✅ 판례 추가: [case_id:{case_id_int}] [doc_id:{doc_id}] {case_info.get('case_name')} - 거리: {score:.4f}")
+    #             else:
+    #                 print(f"❌ 판례 제외: 거리 너무 멀음 ({score:.4f} > {max_distance})")
+            
+    #         return relevant_cases
+            
+    #     except Exception as e:
+    #         print(f"❌ 판례 검색 실패: {str(e)}")
+    #         return []
     async def search_relevant_cases(self, query: str, k: int = 3) -> List[Dict]:
         """관련 판례 검색 - 실제 메타데이터 case_id 사용"""
         if not self.case_db:
@@ -269,7 +426,8 @@ class VectorDBManager:
             
             relevant_cases = []
             for doc, score in search_results:
-                max_distance = float(os.getenv("MAX_DISTANCE", "1.5"))
+                max_distance = MAX_DISTANCE  # ✅ config.py에서 불러온 거리 기준값 사용
+
                 if score <= max_distance:
                     # case_id를 정수로 변환
                     case_id_str = doc.metadata.get("case_id", "")
@@ -281,9 +439,8 @@ class VectorDBManager:
                         "content": doc.page_content,
                         "metadata": doc.metadata,
                         "distance_score": score,
-                        # 실제 메타데이터 case_id를 정수로 변환
                         "case_id": case_id_int,
-                        "doc_id": doc_id,         # 판례번호는 별도 필드
+                        "doc_id": doc_id,
                         "case_name": doc.metadata.get("case_name", ""),
                         "case_type": doc.metadata.get("case_type", ""),
                         "announce_date": doc.metadata.get("announce_date", ""),
@@ -302,6 +459,7 @@ class VectorDBManager:
             print(f"❌ 판례 검색 실패: {str(e)}")
             return []
 
+
 class ContractService:
     def __init__(self, model_name: str = "claude-sonnet-4-20250514", temperature: float = 0.1):
         """
@@ -315,7 +473,8 @@ class ContractService:
             model=model_name,
             temperature=temperature,
             max_tokens=4000,
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
+            anthropic_api_key=ANTHROPIC_API_KEY
+
         )
         
         # 벡터 데이터베이스 매니저 초기화
@@ -503,7 +662,7 @@ class ContractService:
             print(f"🔍 법령 검색 중: {combined_query}")
             relevant_laws = await self.vector_db.search_relevant_laws(
                 combined_query, 
-                k=int(os.getenv("VECTOR_SEARCH_K", "5"))
+                k=VECTOR_SEARCH_K  # ✅ config에서 불러온 상수로 대체
             )
             
             # 3. 관련 판례 검색  

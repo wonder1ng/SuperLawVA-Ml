@@ -77,12 +77,12 @@ def summarize_contract_for_review(contract_data: dict) -> str:
 [조항 목록]
 """
         for i, article in enumerate(articles, 1):
-            summary += f"{i}. {article[:50]}...\n"
+            summary += f"{i}. {article[:60]}...\n"
         
         if agreements:
             summary += "\n[특약사항]\n"
             for i, agreement in enumerate(agreements, 1):
-                summary += f"{i}. {agreement[:50]}...\n"
+                summary += f"{i}. {agreement[:60]}...\n"
         
         return summary
         

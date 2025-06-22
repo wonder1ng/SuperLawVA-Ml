@@ -7,10 +7,13 @@
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 
+# config import 추가
+from config import CLAUDE_MODEL
+
 def get_claude_llm(temperature: float = 0, max_tokens: int = 8000):
     """Claude LLM 인스턴스 생성 (기본 설정)"""
     return ChatAnthropic(
-        model="claude-sonnet-4-20250514", 
+        model=CLAUDE_MODEL, 
         temperature=temperature,
         max_tokens=max_tokens
     )
@@ -18,7 +21,7 @@ def get_claude_llm(temperature: float = 0, max_tokens: int = 8000):
 def get_claude_llm_for_letter():
     """내용증명용 Claude LLM 설정"""
     return ChatAnthropic(
-        model="claude-sonnet-4-20250514", 
+        model=CLAUDE_MODEL, 
         temperature=0,  # 정확한 법적 문서를 위해 낮은 temperature
         max_tokens=8000
     )
@@ -26,7 +29,7 @@ def get_claude_llm_for_letter():
 def get_claude_llm_for_review():
     """계약서 검토용 Claude LLM 설정"""
     return ChatAnthropic(
-        model="claude-sonnet-4-20250514", 
+        model=CLAUDE_MODEL, 
         temperature=0,  # 정확한 분석을 위해 낮은 temperature
         max_tokens=6000
     )
@@ -34,7 +37,7 @@ def get_claude_llm_for_review():
 def get_claude_llm_for_clause():
     """특약 생성용 Claude LLM 설정"""
     return ChatAnthropic(
-        model="claude-sonnet-4-20250514", 
+        model=CLAUDE_MODEL, 
         temperature=0.3,  # 약간의 창의성을 위해 temperature 증가
         max_tokens=4000
     )
