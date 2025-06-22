@@ -10,6 +10,13 @@ Author: ooheunsu
 Date: 2025-06-16  
 Requirements: fastapi, uvicorn, python-dotenv, logging
 """
+
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+# 벡터DB 로더들을 위한 경로 추가
+sys.path.append(os.path.dirname(__file__))  # ml/ 디렉토리 추가
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -17,30 +24,41 @@ from contextlib import asynccontextmanager
 import uvicorn
 import logging
 from datetime import datetime
-import os
-from dotenv import load_dotenv
+# import os
+# from dotenv import load_dotenv
+
+# 추가 - 기존 유지
+from config import (
+    HOST, PORT, RELOAD,         # 서버 실행 설정
+    APP_VERSION,                # 버전 문자열
+    ANTHROPIC_API_KEY,          # 필수 키
+    OPENAI_API_KEY,             # 선택 키
+    CORS_ORIGINS                # CORS 도메인 허용
+)
 
 # 환경변수 로드
-load_dotenv()
+# load_dotenv()
 
 # 라우터 임포트
 try:
     # 특약사항 생성 라우터
-    from routes.contract_terms_router import router as contract_router
+
+    #ml/src/routes/contract_terms_router.py
+    from src.routes.contract_terms_router import router as contract_router
 except ImportError:
     contract_router = None
     print("⚠️  contract_terms_router를 찾을 수 없습니다.")
 
 try:
     # 내용증명 생성 라우터
-    from routes.generate_letter import router as letter_router
+    from src.routes.generate_letter import router as letter_router
 except ImportError:
     letter_router = None
     print("⚠️  generate_letter router를 찾을 수 없습니다.")
 
 try:
     # 계약서 검토 라우터
-    from routes.analyze_contract import router as analyze_router
+    from src.routes.analyze_contract import router as analyze_router
 except ImportError:
     analyze_router = None
     print("⚠️  analyze_contract router를 찾을 수 없습니다.")
@@ -65,10 +83,13 @@ async def lifespan(app: FastAPI):
     logger.info(f"📅 시작 시간: {datetime.now().isoformat()}")
     
     # 환경변수 검증
-    required_env_vars = ["ANTHROPIC_API_KEY"]
-    optional_env_vars = ["OPENAI_API_KEY"]
+    missing_vars = []
+    if not ANTHROPIC_API_KEY:
+        missing_vars.append("ANTHROPIC_API_KEY")
     
-    missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+    missing_optional = []
+    if not OPENAI_API_KEY:
+        missing_optional.append("OPENAI_API_KEY")
     
     if missing_vars:
         logger.error(f"❌ 필수 환경변수가 없습니다: {missing_vars}")
@@ -77,8 +98,6 @@ async def lifespan(app: FastAPI):
             detail=f"필수 환경변수가 설정되지 않았습니다: {missing_vars}"
         )
     
-    # 선택적 환경변수 확인
-    missing_optional = [var for var in optional_env_vars if not os.getenv(var)]
     if missing_optional:
         logger.warning(f"⚠️  선택적 환경변수가 없습니다: {missing_optional}")
     
@@ -116,12 +135,12 @@ app = FastAPI(
     #### 1. 📝 내용증명 생성
     - **기능**: 임대차 관련 내용증명서 자동 생성
     - **특징**: 법적 근거와 판례 기반 문서 작성
-    - **엔드포인트**: `/api/v2/generate-letter`
+    - **엔드포인트**: `/api/v1/generate-letter`
     
     #### 2. 🔍 계약서 검토 분석
     - **기능**: 임대차 계약서 조항별 위험도 분석
     - **특징**: RAG 기반 법령·판례 검색 및 분석
-    - **엔드포인트**: `/api/v2/analyze-contract`
+    - **엔드포인트**: `/api/v1/analyze-contract`
     
     #### 3. ⚖️ 특약사항 생성
     - **기능**: 임차인 중심의 맞춤형 특약 조건 제안
@@ -144,9 +163,9 @@ app = FastAPI(
     ### 📞 지원 정보
     - **문의**: contact@example.com
     - **문서**: 각 엔드포인트별 상세 API 문서 제공
-    - **버전**: v2.0.0 (통합 버전)
+    - **버전**: v1.0.0 (통합 버전)
     """,
-    version="2.0.0",
+    version=APP_VERSION,
     contact={
         "name": "통합 AI 법률 서비스",
         "email": "contact@example.com",
@@ -163,7 +182,7 @@ app = FastAPI(
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실제 운영 시에는 특정 도메인으로 제한
+    allow_origins=CORS_ORIGINS.split(",") if CORS_ORIGINS != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -196,7 +215,7 @@ async def root():
     
     return {
         "service": "🏛️ 통합 AI 법률 서비스 API",
-        "version": "2.0.0",
+        "version": APP_VERSION,
         "description": "Claude Sonnet 4 기반 종합 법률 자동화 시스템",
         "specialist": "임대차 전문 (25년 경력 변호사 페르소나)",
         "ai_model": "Claude Sonnet 4",
@@ -206,8 +225,8 @@ async def root():
             "redoc": "/redoc",
             "health": "/health",
             "detailed_health": "/health/detailed",
-            "letter_generation": "/api/v2/generate-letter" if letter_router else "❌ 비활성화",
-            "contract_analysis": "/api/v2/analyze-contract" if analyze_router else "❌ 비활성화",
+            "letter_generation": "/api/v1/generate-letter" if letter_router else "❌ 비활성화",
+            "contract_analysis": "/api/v1/analyze-contract" if analyze_router else "❌ 비활성화",
             "special_terms": "/api/v1/contract/generate-special-terms" if contract_router else "❌ 비활성화",
             "special_terms_health": "/api/v1/contract/health" if contract_router else "❌ 비활성화",
             "special_terms_validate": "/api/v1/contract/validate-input" if contract_router else "❌ 비활성화"
@@ -234,7 +253,7 @@ async def health_check():
         "status": "healthy",
         "service": "unified-ai-legal-assistant",
         "timestamp": datetime.now().isoformat(),
-        "version": "2.0.0"
+        "version": APP_VERSION
     }
 
 
@@ -246,12 +265,12 @@ async def detailed_health_check():
     service_health = {
         "내용증명_생성": {
             "status": "active" if letter_router else "inactive",
-            "endpoint": "/api/v2/generate-letter" if letter_router else None,
+            "endpoint": "/api/v1/generate-letter" if letter_router else None,
             "description": "임대차 관련 내용증명서 자동 생성"
         },
         "계약서_검토": {
             "status": "active" if analyze_router else "inactive", 
-            "endpoint": "/api/v2/analyze-contract" if analyze_router else None,
+            "endpoint": "/api/v1/analyze-contract" if analyze_router else None,
             "description": "임대차 계약서 조항별 위험도 분석"
         },
         "특약사항_생성": {
@@ -270,13 +289,13 @@ async def detailed_health_check():
         "services": service_health,
         "system_info": {
             "python_version": "3.x",
-            "fastapi_version": "0.x",
+            "fastapi_version": APP_VERSION,
             "ai_model": "Claude Sonnet 4",
             "framework": "FastAPI + LangChain"
         },
         "environment": {
-            "anthropic_api": "✅" if os.getenv("ANTHROPIC_API_KEY") else "❌",
-            "openai_api": "✅" if os.getenv("OPENAI_API_KEY") else "⚠️"
+            "anthropic_api": "✅" if ANTHROPIC_API_KEY else "❌",
+            "openai_api":    "✅" if OPENAI_API_KEY    else "⚠️"
         },
         "timestamp": datetime.now().isoformat()
     }
@@ -312,9 +331,9 @@ async def not_found_handler(request, exc):
     available_endpoints = ["/docs", "/health", "/health/detailed"]
     
     if letter_router:
-        available_endpoints.append("/api/v2/generate-letter")
+        available_endpoints.append("/api/v1/generate-letter")
     if analyze_router:
-        available_endpoints.append("/api/v2/analyze-contract")
+        available_endpoints.append("/api/v1/analyze-contract")
     if contract_router:
         available_endpoints.extend([
             "/api/v1/contract/generate-special-terms",
@@ -337,25 +356,21 @@ async def not_found_handler(request, exc):
 
 # 메인 실행
 if __name__ == "__main__":
-    # 환경변수에서 설정 읽기
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8000"))
-    reload = os.getenv("RELOAD", "True").lower() == "true"
     
     logger.info("=" * 60)
     logger.info("🏛️  통합 AI 법률 서비스 시작")
     logger.info("=" * 60)
-    logger.info(f"🌐 서버 주소: {host}:{port}")
-    logger.info(f"📖 API 문서: http://{host}:{port}/docs")
-    logger.info(f"📚 ReDoc 문서: http://{host}:{port}/redoc")
-    logger.info(f"🔄 자동 리로드: {reload}")
-    logger.info(f"🏥 헬스체크: http://{host}:{port}/health")
+    logger.info(f"🌐 서버 주소: {HOST}:{PORT}")
+    logger.info(f"📖 API 문서: http://{HOST}:{PORT}/docs")
+    logger.info(f"📚 ReDoc 문서: http://{HOST}:{PORT}/redoc")
+    logger.info(f"🔄 자동 리로드: {RELOAD}")
+    logger.info(f"🏥 헬스체크: http://{HOST}:{PORT}/health")
     logger.info("=" * 60)
     
     uvicorn.run(
         "main:app",
-        host=host,
-        port=port,
-        reload=reload,
+        host=HOST,
+        port=PORT,
+        reload=RELOAD,
         log_level="info"
     )

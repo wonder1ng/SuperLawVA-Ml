@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from services.schema.analyze_schema import ContractAnalysisInput, ContractAnalysisOutput
 from services.analyze_contract_chain import run_analysis_chain
 import traceback
+from config import APP_VERSION
 
 router = APIRouter()
 
@@ -80,7 +81,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "contract_analysis",
-        "version": "v2.0.0",
+        "version": APP_VERSION,
         "message": "계약서 검토 분석 서비스가 정상 작동 중입니다.",
         "features": [
             "임대차 계약 조항 위험도 분석",

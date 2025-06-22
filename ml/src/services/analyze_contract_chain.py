@@ -11,6 +11,13 @@ from datetime import datetime
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 
+# config import 추가
+from config import (
+    LAW_SEARCH_LIMIT,
+    CASE_SEARCH_LIMIT,
+    CASE_CONTENT_PREVIEW_LENGTH
+)
+
 # 공통 모듈들 import
 from services.shared.document_search import DocumentSearchService
 from services.shared.contract_parser import extract_contract_clauses, extract_key_contract_info
@@ -33,6 +40,11 @@ from services.schema.analyze_schema import (
 # 조항별 분석용 스키마
 from pydantic import BaseModel, Field
 from typing import Optional, List
+
+# 기존
+from dotenv import load_dotenv
+load_dotenv()
+
 
 class SingleClauseAnalysisResult(BaseModel):
     """단일 조항 분석 결과 (LLM 출력용)"""
@@ -201,13 +213,13 @@ class ContractAnalysisOrchestrator:
         # 법령 10개 검색
         law_docs = await loop.run_in_executor(
             None,
-            lambda: self.search_service.law_vectorstore.similarity_search(search_query, k=10)
+            lambda: self.search_service.law_vectorstore.similarity_search(search_query, k=LAW_SEARCH_LIMIT)
         )
         
         # 판례 10개 검색
         case_docs = await loop.run_in_executor(
             None,
-            lambda: self.search_service.case_vectorstore.similarity_search(search_query, k=10)
+            lambda: self.search_service.case_vectorstore.similarity_search(search_query, k=CASE_SEARCH_LIMIT)
         )
         
         return law_docs, case_docs
@@ -324,7 +336,7 @@ class ContractAnalysisOrchestrator:
             try:
                 case_name = case_doc.metadata.get('case_name', '')
                 doc_id = case_doc.metadata.get('doc_id', '')
-                case_content = case_doc.page_content.strip()[:500]  # 처음 500자만
+                case_content = case_doc.page_content.strip()[:CASE_CONTENT_PREVIEW_LENGTH]  # 처음 500자만
                 
                 case_info = f"{case_name} ({doc_id})" if case_name else doc_id
                 
