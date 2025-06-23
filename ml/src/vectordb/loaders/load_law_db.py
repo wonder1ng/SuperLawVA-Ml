@@ -24,9 +24,7 @@ def load_law_vectorstore():
     vectorstore = Chroma(
         persist_directory=str(CHROMA_LAW_DB_PATH),
         embedding_function=embedding_model,
-        collection_name=LAW_COLLECTION_NAME,
-        collection_metadata={"hnsw:space": "cosine"},
-        use_persistent_index=False
+        collection_name=LAW_COLLECTION_NAME
     )
 
     return vectorstore
