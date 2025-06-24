@@ -12,6 +12,7 @@ from typing import List, Dict, Any
 import time
 import logging
 from datetime import datetime
+from config import APP_VERSION
 
 from services.schema.terms_schema import (
     ContractInput, 
@@ -114,7 +115,8 @@ async def create_special_terms(contract_input: ContractInput) -> ContractRespons
             result.analysis_metadata = {
                 "model": "Claude Sonnet 4",
                 "generation_time": generation_time,
-                "version": "v1.0.0"
+                "version": APP_VERSION
+
             }
         
         # 성공 응답
@@ -153,7 +155,7 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "service": "contract-special-terms",
-        "version": "v1.0.0"
+        "version": APP_VERSION
     }
 
 

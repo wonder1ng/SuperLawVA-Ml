@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 from services.schema.letter_schema import LetterGenerationInput, LetterGenerationOutput
 from services.generate_letter_chain import run_letter_chain
 import traceback
-
+from config import APP_VERSION
 router = APIRouter()
 
 @router.post("/generate-letter", response_model=LetterGenerationOutput)
@@ -79,7 +79,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "letter_generation",
-        "version": "v2.1.0 (modular)",
+        "version": APP_VERSION,
         "message": "모듈화된 내용증명 생성 서비스가 정상 작동 중입니다.",
         "modules": [
             "shared.document_search",

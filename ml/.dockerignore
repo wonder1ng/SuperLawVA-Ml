@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.vscode/
+*.sqlite3
+*.bin
+vectordb/  # S3에서 가져올 거라 제외
