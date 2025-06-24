@@ -24,6 +24,6 @@ jobs:
             cd ~/ml
             git fetch origin refactor/path-handling
             git reset --hard origin/refactor/path-handling
-            docker-compose down
-            docker-compose up -d --build
+            docker compose down
+            docker compose up -d --build
           EOF
