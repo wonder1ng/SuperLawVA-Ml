@@ -21,7 +21,7 @@ jobs:
       - name: Deploy to EC2 and restart container
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            cd ~/ml
+            cd ~/ml/ml
             git fetch origin refactor/path-handling
             git reset --hard origin/refactor/path-handling
             docker compose down
