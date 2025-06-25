@@ -81,10 +81,11 @@ jobs:
 
       - name: Deploy & restart container on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
+              ubuntu@${{ secrets.EC2_HOST }} << 'SSH_EOF'
             set -e
-            echo "=== 배포 시작: $(date) ==="
 
+            echo "=== 배포 시작: $(date) ==="
             cd ~/ml/ml
 
             # Git 업데이트
@@ -94,13 +95,13 @@ jobs:
 
             # .env 작성
             cat > .env << 'ENV_EOF'
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-            HOST=0.0.0.0
-            PORT=8000
-            RELOAD=true
-            CLAUDE_MODEL=claude-sonnet-4-20250514
-            ENV_EOF
+OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+HOST=0.0.0.0
+PORT=8000
+RELOAD=true
+CLAUDE_MODEL=claude-sonnet-4-20250514
+ENV_EOF
 
             # 컨테이너 재배포
             docker compose down || true
@@ -108,4 +109,4 @@ jobs:
 
             docker compose ps
             echo "🎉 배포 완료: $(date)"
-          EOF
+SSH_EOF
