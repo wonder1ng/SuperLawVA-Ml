@@ -54,6 +54,9 @@ jobs:
         run: black --check --diff ml
         continue-on-error: true
 
+      - name: Syntax check (compileall)
+        run: python -m compileall -q ml
+
       - name: Run tests
         run: pytest ml --verbose --tb=short
 
