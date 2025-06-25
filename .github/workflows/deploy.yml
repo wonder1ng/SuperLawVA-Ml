@@ -1,29 +1,33 @@
-name: Deploy to EC2
+# ❌ Deprecated: This deploy workflow has been replaced by `ci-cd-test.yml`
+# This file is temporarily preserved for backup and testing purposes.
+# Once verified, this file will be removed.
 
-on:
-  push:
-    branches:
-      - develop
+# name: Deploy to EC2
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+# on:
+#   push:
+#     branches:
+#       - develop
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.ML_EC2_SSH_KEY }}
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Deploy to EC2 and restart container
-        run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            cd ~/ml/ml
-            git fetch origin refactor/path-handling
-            git reset --hard origin/refactor/path-handling
-            docker compose down
-            docker compose up -d --build
-          EOF
+#       - name: Set up SSH
+#         uses: webfactory/ssh-agent@v0.8.0
+#         with:
+#           ssh-private-key: ${{ secrets.ML_EC2_SSH_KEY }}
+
+#       - name: Deploy to EC2 and restart container
+#         run: |
+#           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+#             cd ~/ml/ml
+#             git fetch origin refactor/path-handling
+#             git reset --hard origin/refactor/path-handling
+#             docker compose down
+#             docker compose up -d --build
+#           EOF
