@@ -68,7 +68,7 @@ jobs:
     name: Deploy to EC2
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/')) && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/')) && github.event_name == 'push'
 
     steps:
       - name: Checkout repository
