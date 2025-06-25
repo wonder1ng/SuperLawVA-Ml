@@ -5,9 +5,10 @@ Author: ooheunsu
 Date: 2025-06-16
 Requirements: pydantic, typing
 """
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 # 법령 정보 스키마
@@ -18,7 +19,7 @@ class LegalBasis(BaseModel):
     content: str = Field(..., description="법령 원문")
 
 
-# 판례 정보 스키마  
+# 판례 정보 스키마
 class CaseBasis(BaseModel):
     case_id: Optional[int] = Field(None, description="판례 ID")
     case: str = Field(..., description="참고한 판례명")
@@ -36,7 +37,7 @@ class RecommendedAgreement(BaseModel):
 # 입력 스키마 - 필수: user_query, 선택: 기타 계약 정보
 class ContractInput(BaseModel):
     user_query: List[str] = Field(..., description="사용자 요청사항 목록", min_items=1)
-    
+
     # 선택적 계약 정보들
     contract_type: Optional[str] = Field(None, description="계약 종류 (전세, 월세)")
     property_address: Optional[str] = Field(None, description="부동산 주소")
@@ -44,9 +45,11 @@ class ContractInput(BaseModel):
     monthly_rent: Optional[int] = Field(None, description="월세")
     contract_period_start: Optional[str] = Field(None, description="계약 시작일")
     contract_period_end: Optional[str] = Field(None, description="계약 종료일")
-    
+
     # 기타 컨텍스트 정보
-    additional_context: Optional[Dict[str, Any]] = Field(None, description="추가 계약 정보")
+    additional_context: Optional[Dict[str, Any]] = Field(
+        None, description="추가 계약 정보"
+    )
 
 
 # 출력 스키마 - 3개 필수 섹션
@@ -56,38 +59,34 @@ class ContractOutput(BaseModel):
     user_id: Optional[int] = Field(None, description="사용자 ID")
     contract_id: Optional[int] = Field(None, description="계약서 ID")
     created_date: datetime = Field(default_factory=datetime.now, description="생성일시")
-    
+
     # 필수 출력 섹션들
     recommended_agreements: List[RecommendedAgreement] = Field(
-        ..., 
+        ...,
         description="추가 조건 목록",
-        
     )
     legal_basis: List[LegalBasis] = Field(
-        ..., 
+        ...,
         description="관련 법적 해설",
-        
     )
     case_basis: List[CaseBasis] = Field(
-        ..., 
+        ...,
         description="관련 판례 요약",
-        
     )
-    
+
     # 분석 메타데이터
     analysis_metadata: Optional[Dict[str, Any]] = Field(
-        default_factory=lambda: {
-            "model": "Claude Sonnet 4",
-            "version": "v1.0.0"
-        },
-        description="분석 메타데이터"
+        default_factory=lambda: {"model": "Claude Sonnet 4", "version": "v1.0.0"},
+        description="분석 메타데이터",
     )
 
 
 # API 응답 래퍼
 class ContractResponse(BaseModel):
     success: bool = Field(True, description="처리 성공 여부")
-    message: str = Field("특약사항이 성공적으로 생성되었습니다.", description="응답 메시지")
+    message: str = Field(
+        "특약사항이 성공적으로 생성되었습니다.", description="응답 메시지"
+    )
     data: ContractOutput = Field(..., description="생성된 특약사항 데이터")
 
 

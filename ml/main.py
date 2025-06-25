@@ -11,30 +11,32 @@ Date: 2025-06-16
 Requirements: fastapi, uvicorn, python-dotenv, logging
 """
 
-import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 # 벡터DB 로더들을 위한 경로 추가
 sys.path.append(os.path.dirname(__file__))  # ml/ 디렉토리 추가
 
+import logging
+from contextlib import asynccontextmanager
+from datetime import datetime
+
+import uvicorn
+# 추가 - 기존 유지
+from config import ANTHROPIC_API_KEY  # 필수 키
+from config import APP_VERSION  # 버전 문자열
+from config import CORS_ORIGINS  # CORS 도메인 허용
+from config import OPENAI_API_KEY  # 선택 키
+from config import RELOAD  # 서버 실행 설정
+from config import HOST, PORT
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import uvicorn
-import logging
-from datetime import datetime
+
 # import os
 # from dotenv import load_dotenv
 
-# 추가 - 기존 유지
-from config import (
-    HOST, PORT, RELOAD,         # 서버 실행 설정
-    APP_VERSION,                # 버전 문자열
-    ANTHROPIC_API_KEY,          # 필수 키
-    OPENAI_API_KEY,             # 선택 키
-    CORS_ORIGINS                # CORS 도메인 허용
-)
 
 # 환경변수 로드
 # load_dotenv()
@@ -43,7 +45,7 @@ from config import (
 try:
     # 특약사항 생성 라우터
 
-    #ml/src/routes/contract_terms_router.py
+    # ml/src/routes/contract_terms_router.py
     from src.routes.contract_terms_router import router as contract_router
 except ImportError:
     contract_router = None
@@ -65,8 +67,7 @@ except ImportError:
 
 # 로깅 설정
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -81,42 +82,42 @@ async def lifespan(app: FastAPI):
     # 앱 시작 시
     logger.info("🚀 통합 AI 법률 서비스 시작")
     logger.info(f"📅 시작 시간: {datetime.now().isoformat()}")
-    
+
     # 환경변수 검증
     missing_vars = []
     if not ANTHROPIC_API_KEY:
         missing_vars.append("ANTHROPIC_API_KEY")
-    
+
     missing_optional = []
     if not OPENAI_API_KEY:
         missing_optional.append("OPENAI_API_KEY")
-    
+
     if missing_vars:
         logger.error(f"❌ 필수 환경변수가 없습니다: {missing_vars}")
         raise HTTPException(
             status_code=500,
-            detail=f"필수 환경변수가 설정되지 않았습니다: {missing_vars}"
+            detail=f"필수 환경변수가 설정되지 않았습니다: {missing_vars}",
         )
-    
+
     if missing_optional:
         logger.warning(f"⚠️  선택적 환경변수가 없습니다: {missing_optional}")
-    
+
     logger.info("✅ 환경변수 검증 완료")
-    
+
     # 로드된 라우터 확인
     router_status = {
         "특약사항 생성": "✅" if contract_router else "❌",
-        "내용증명 생성": "✅" if letter_router else "❌", 
-        "계약서 검토": "✅" if analyze_router else "❌"
+        "내용증명 생성": "✅" if letter_router else "❌",
+        "계약서 검토": "✅" if analyze_router else "❌",
     }
-    
+
     for service, status in router_status.items():
         logger.info(f"{status} {service} 서비스")
-    
+
     logger.info("✅ 통합 AI 법률 서비스 초기화 완료")
-    
+
     yield
-    
+
     # 앱 종료 시
     logger.info("🛑 통합 AI 법률 서비스 종료")
 
@@ -176,7 +177,7 @@ app = FastAPI(
     },
     lifespan=lifespan,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # CORS 설정
@@ -196,7 +197,10 @@ if analyze_router:
     app.include_router(analyze_router, prefix="/api/v1", tags=["🔍 계약서 검토"])
 
 if contract_router:
-    app.include_router(contract_router, prefix="/api/v1/contract", tags=["⚖️ 특약사항 생성"])
+    app.include_router(
+        contract_router, prefix="/api/v1/contract", tags=["⚖️ 특약사항 생성"]
+    )
+
 
 # 루트 엔드포인트
 @app.get("/", tags=["🏠 기본 정보"])
@@ -212,7 +216,7 @@ async def root():
         active_services.append("🔍 계약서 검토")
     if contract_router:
         active_services.append("⚖️ 특약사항 생성")
-    
+
     return {
         "service": "🏛️ 통합 AI 법률 서비스 API",
         "version": APP_VERSION,
@@ -225,21 +229,33 @@ async def root():
             "redoc": "/redoc",
             "health": "/health",
             "detailed_health": "/health/detailed",
-            "letter_generation": "/api/v1/generate-letter" if letter_router else "❌ 비활성화",
-            "contract_analysis": "/api/v1/analyze-contract" if analyze_router else "❌ 비활성화",
-            "special_terms": "/api/v1/contract/generate-special-terms" if contract_router else "❌ 비활성화",
-            "special_terms_health": "/api/v1/contract/health" if contract_router else "❌ 비활성화",
-            "special_terms_validate": "/api/v1/contract/validate-input" if contract_router else "❌ 비활성화"
+            "letter_generation": (
+                "/api/v1/generate-letter" if letter_router else "❌ 비활성화"
+            ),
+            "contract_analysis": (
+                "/api/v1/analyze-contract" if analyze_router else "❌ 비활성화"
+            ),
+            "special_terms": (
+                "/api/v1/contract/generate-special-terms"
+                if contract_router
+                else "❌ 비활성화"
+            ),
+            "special_terms_health": (
+                "/api/v1/contract/health" if contract_router else "❌ 비활성화"
+            ),
+            "special_terms_validate": (
+                "/api/v1/contract/validate-input" if contract_router else "❌ 비활성화"
+            ),
         },
         "features": [
             "📝 RAG 기반 내용증명 자동 생성",
             "🔍 계약서 조항별 위험도 분석",
             "⚖️ 임차인 중심 특약사항 제안",
             "📚 법령·판례 검색 및 해설",
-            "💼 실무 중심 협상 전략 제공"
+            "💼 실무 중심 협상 전략 제공",
         ],
         "timestamp": datetime.now().isoformat(),
-        "status": "🟢 정상 운영 중"
+        "status": "🟢 정상 운영 중",
     }
 
 
@@ -253,7 +269,7 @@ async def health_check():
         "status": "healthy",
         "service": "unified-ai-legal-assistant",
         "timestamp": datetime.now().isoformat(),
-        "version": APP_VERSION
+        "version": APP_VERSION,
     }
 
 
@@ -266,22 +282,26 @@ async def detailed_health_check():
         "내용증명_생성": {
             "status": "active" if letter_router else "inactive",
             "endpoint": "/api/v1/generate-letter" if letter_router else None,
-            "description": "임대차 관련 내용증명서 자동 생성"
+            "description": "임대차 관련 내용증명서 자동 생성",
         },
         "계약서_검토": {
-            "status": "active" if analyze_router else "inactive", 
+            "status": "active" if analyze_router else "inactive",
             "endpoint": "/api/v1/analyze-contract" if analyze_router else None,
-            "description": "임대차 계약서 조항별 위험도 분석"
+            "description": "임대차 계약서 조항별 위험도 분석",
         },
         "특약사항_생성": {
             "status": "active" if contract_router else "inactive",
-            "endpoint": "/api/v1/contract/generate-special-terms" if contract_router else None,
-            "description": "임차인 중심의 맞춤형 특약 조건 제안"
-        }
+            "endpoint": (
+                "/api/v1/contract/generate-special-terms" if contract_router else None
+            ),
+            "description": "임차인 중심의 맞춤형 특약 조건 제안",
+        },
     }
-    
-    active_count = sum(1 for service in service_health.values() if service["status"] == "active")
-    
+
+    active_count = sum(
+        1 for service in service_health.values() if service["status"] == "active"
+    )
+
     return {
         "overall_status": "healthy" if active_count > 0 else "warning",
         "active_services": active_count,
@@ -291,13 +311,13 @@ async def detailed_health_check():
             "python_version": "3.x",
             "fastapi_version": APP_VERSION,
             "ai_model": "Claude Sonnet 4",
-            "framework": "FastAPI + LangChain"
+            "framework": "FastAPI + LangChain",
         },
         "environment": {
             "anthropic_api": "✅" if ANTHROPIC_API_KEY else "❌",
-            "openai_api":    "✅" if OPENAI_API_KEY    else "⚠️"
+            "openai_api": "✅" if OPENAI_API_KEY else "⚠️",
         },
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
 
@@ -308,7 +328,7 @@ async def global_exception_handler(request, exc):
     전역 예외 처리기
     """
     logger.error(f"예상치 못한 오류 발생: {str(exc)}", exc_info=True)
-    
+
     return JSONResponse(
         status_code=500,
         content={
@@ -317,8 +337,8 @@ async def global_exception_handler(request, exc):
             "error_code": "INTERNAL_SERVER_ERROR",
             "timestamp": datetime.now().isoformat(),
             "path": str(request.url),
-            "service": "unified-ai-legal-assistant"
-        }
+            "service": "unified-ai-legal-assistant",
+        },
     )
 
 
@@ -329,18 +349,20 @@ async def not_found_handler(request, exc):
     404 에러 처리기
     """
     available_endpoints = ["/docs", "/health", "/health/detailed"]
-    
+
     if letter_router:
         available_endpoints.append("/api/v1/generate-letter")
     if analyze_router:
         available_endpoints.append("/api/v1/analyze-contract")
     if contract_router:
-        available_endpoints.extend([
-            "/api/v1/contract/generate-special-terms",
-            "/api/v1/contract/health",
-            "/api/v1/contract/validate-input"
-        ])
-    
+        available_endpoints.extend(
+            [
+                "/api/v1/contract/generate-special-terms",
+                "/api/v1/contract/health",
+                "/api/v1/contract/validate-input",
+            ]
+        )
+
     return JSONResponse(
         status_code=404,
         content={
@@ -350,13 +372,14 @@ async def not_found_handler(request, exc):
             "path": str(request.url),
             "available_endpoints": available_endpoints,
             "tip": "'/docs'에서 전체 API 문서를 확인하세요.",
-            "timestamp": datetime.now().isoformat()
-        }
+            "timestamp": datetime.now().isoformat(),
+        },
     )
+
 
 # 메인 실행
 if __name__ == "__main__":
-    
+
     logger.info("=" * 60)
     logger.info("🏛️  통합 AI 법률 서비스 시작")
     logger.info("=" * 60)
@@ -366,11 +389,5 @@ if __name__ == "__main__":
     logger.info(f"🔄 자동 리로드: {RELOAD}")
     logger.info(f"🏥 헬스체크: http://{HOST}:{PORT}/health")
     logger.info("=" * 60)
-    
-    uvicorn.run(
-        "main:app",
-        host=HOST,
-        port=PORT,
-        reload=RELOAD,
-        log_level="info"
-    )
+
+    uvicorn.run("main:app", host=HOST, port=PORT, reload=RELOAD, log_level="info")
