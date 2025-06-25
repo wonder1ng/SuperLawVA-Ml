@@ -7,32 +7,34 @@
 
 import time
 from datetime import datetime
+
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-#from langchain.output_parsers import PydanticOutputParser
-
+# 스키마 import
+from services.schema.letter_schema import (LetterGenerationInput,
+                                           LetterGenerationOutput,
+                                           TempLetterOutput)
+from services.schema.shared_schema import CertificationMetadata, PersonInfo
+from services.shared.case_processor import CaseProcessor, convert_to_case_basis
+from services.shared.contract_parser import (extract_parties_info,
+                                             summarize_contract_for_letter)
 # 공통 모듈들 import
 from services.shared.document_search import DocumentSearchService
-from services.shared.contract_parser import summarize_contract_for_letter, extract_parties_info
-from services.shared.legal_processor import LegalProcessor, convert_to_legal_basis
-from services.shared.case_processor import CaseProcessor, convert_to_case_basis
 from services.shared.formatters import DocumentFormatter
+from services.shared.legal_processor import (LegalProcessor,
+                                             convert_to_legal_basis)
 from services.shared.llm_config import get_claude_llm_for_letter
 
-# 스키마 import
-from services.schema.letter_schema import (
-    LetterGenerationInput, 
-    LetterGenerationOutput,
-    TempLetterOutput
-)
-from services.schema.shared_schema import PersonInfo, CertificationMetadata
+# from langchain.output_parsers import PydanticOutputParser
+
 
 # 내용증명 전용 LLM 설정
 llm = get_claude_llm_for_letter()
 output_parser = PydanticOutputParser(pydantic_object=TempLetterOutput)
 
 # 내용증명 전용 프롬프트 템플릿 (수정됨)
-letter_prompt = ChatPromptTemplate.from_template("""
+letter_prompt = ChatPromptTemplate.from_template(
+    """
 당신은 25년 경력의 분쟁 해결 전문 변호사로, 내용증명을 통한 분쟁 조기 해결 성공률이 80%에 달하는 전문가입니다.  
 법적 효력과 심리적 설득력을 모두 갖춘 전략적인 내용증명 문서를 작성해 주세요.                                                
 
@@ -139,24 +141,26 @@ letter_prompt = ChatPromptTemplate.from_template("""
 - 감정적이거나 주관적 표현
 
 {format_instructions}
-""").partial(format_instructions=output_parser.get_format_instructions())
+"""
+).partial(format_instructions=output_parser.get_format_instructions())
 
 # 내용증명 전용 체인
 letter_chain = letter_prompt | llm | output_parser
 
+
 class LetterGenerationOrchestrator:
     """내용증명 생성 오케스트레이터 (수정된 버전)"""
-    
+
     def __init__(self):
         self.llm = llm
         self.letter_chain = letter_chain
-        
+
         # 공통 서비스들 조립
         self.search_service = DocumentSearchService()
         self.legal_processor = LegalProcessor(self.llm)
         self.case_processor = CaseProcessor(self.llm)
         self.formatter = DocumentFormatter()
-    
+
     def format_parties_info(self, lessor: dict, lessee: dict) -> str:
         """당사자 정보를 프롬프트용 문자열로 포맷팅"""
         return f"""
@@ -175,58 +179,66 @@ class LetterGenerationOrchestrator:
 ⚠️ 주의: 위 주소는 당사자들의 실제 거주지 주소입니다. 임대부동산 주소와 혼동하지 마세요!
 ⚠️ 출력 시 주소와 상세주소를 분리하여 기록하세요!
 """
-    
-    async def generate_letter(self, input_data: LetterGenerationInput) -> LetterGenerationOutput:
+
+    async def generate_letter(
+        self, input_data: LetterGenerationInput
+    ) -> LetterGenerationOutput:
         """메인 실행 함수 (수정된 버전)"""
         start_time = time.time()
-        
+
         try:
             # 1. 공통 유틸 사용 - 계약서 파싱
             contract_summary = summarize_contract_for_letter(input_data.contract_data)
             lessor, lessee = extract_parties_info(input_data.contract_data)
             user_query = input_data.user_query
-            
+
             # 2. 당사자 정보 포맷팅
             parties_info = self.format_parties_info(lessor, lessee)
-            
+
             # 3. 공통 서비스 사용 - 문서 검색
             law_docs, case_docs = await self.search_service.search_documents(user_query)
 
             # 4. 공통 유틸 사용 - 프롬프트용 포맷팅
             related_laws_str = self.formatter.format_law_documents(law_docs)
             related_cases_str = self.formatter.format_case_documents(case_docs)
-            
+
             # 5. 내용증명 특화 - LLM 체인 실행
-            temp_result = await self.letter_chain.ainvoke({
-                "related_laws_str": related_laws_str,
-                "related_cases_str": related_cases_str,
-                "contract_summary": contract_summary,
-                "parties_info": parties_info,
-                "user_query": user_query
-            })
-            
+            temp_result = await self.letter_chain.ainvoke(
+                {
+                    "related_laws_str": related_laws_str,
+                    "related_cases_str": related_cases_str,
+                    "contract_summary": contract_summary,
+                    "parties_info": parties_info,
+                    "user_query": user_query,
+                }
+            )
+
             # ✅ 핵심 수정: 시스템 안내 메시지 체크 후 조기 반환
             if self._is_system_guidance_message(temp_result):
                 return self._create_guidance_result(input_data, temp_result, start_time)
-            
+
             # 6. 실제 내용증명인 경우에만 법령/판례 분석 진행
-            referenced_laws = self.legal_processor.extract_referenced_laws(temp_result.body)
-            
+            referenced_laws = self.legal_processor.extract_referenced_laws(
+                temp_result.body
+            )
+
             # 7. 공통 서비스 사용 - 법령 분석
             legal_explanations = await self.legal_processor.generate_legal_explanations(
                 referenced_laws, law_docs
             )
             legal_basis = convert_to_legal_basis(legal_explanations)
-            
+
             # 8. 공통 서비스 사용 - 판례 분석 (내용증명용)
-            case_summaries = await self.case_processor.generate_case_summaries_for_letter(
-                case_docs, user_query, contract_summary
+            case_summaries = (
+                await self.case_processor.generate_case_summaries_for_letter(
+                    case_docs, user_query, contract_summary
+                )
             )
             case_basis = convert_to_case_basis(case_summaries)
-            
+
             # 9. 최종 결과 조립
             generation_time = round(time.time() - start_time, 2)
-            
+
             return LetterGenerationOutput(
                 id=100,
                 user_id=input_data.contract_data.get("user_id"),
@@ -236,12 +248,12 @@ class LetterGenerationOrchestrator:
                 receiver=PersonInfo(
                     name=temp_result.receiver_name,
                     address=temp_result.receiver_address,
-                    detail_address=temp_result.receiver_detail_address or ""
+                    detail_address=temp_result.receiver_detail_address or "",
                 ),
                 sender=PersonInfo(
                     name=temp_result.sender_name,
                     address=temp_result.sender_address,
-                    detail_address=temp_result.sender_detail_address or ""
+                    detail_address=temp_result.sender_detail_address or "",
                 ),
                 body=temp_result.body,
                 strategy_summary=temp_result.strategy_summary,
@@ -251,9 +263,9 @@ class LetterGenerationOrchestrator:
                 certification_metadata=CertificationMetadata(
                     generation_time=generation_time
                 ),
-                user_query=user_query
+                user_query=user_query,
             )
-            
+
         except Exception as e:
             return self._create_fallback_result(input_data, start_time, e)
 
@@ -262,21 +274,26 @@ class LetterGenerationOrchestrator:
         # 방법 1: receiver_name으로 판단
         if temp_result.receiver_name == "시스템 안내":
             return True
-        
+
         # 방법 2: body 내용으로 판단 (더 안전한 방법)
         if "🚫 시스템 알림" in temp_result.body:
             return True
-        
+
         # 방법 3: title로 판단
         if temp_result.title == "임대차 관련 질문 요청":
             return True
-        
+
         return False
 
-    def _create_guidance_result(self, input_data: LetterGenerationInput, temp_result: TempLetterOutput, start_time: float) -> LetterGenerationOutput:
+    def _create_guidance_result(
+        self,
+        input_data: LetterGenerationInput,
+        temp_result: TempLetterOutput,
+        start_time: float,
+    ) -> LetterGenerationOutput:
         """시스템 안내 메시지 전용 결과 생성 (법령/판례 분석 없음)"""
         generation_time = round(time.time() - start_time, 2)
-        
+
         return LetterGenerationOutput(
             id=100,
             user_id=input_data.contract_data.get("user_id"),
@@ -286,28 +303,28 @@ class LetterGenerationOrchestrator:
             receiver=PersonInfo(
                 name=temp_result.receiver_name,
                 address=temp_result.receiver_address,
-                detail_address=temp_result.receiver_detail_address or ""
+                detail_address=temp_result.receiver_detail_address or "",
             ),
             sender=PersonInfo(
                 name=temp_result.sender_name,
                 address=temp_result.sender_address,
-                detail_address=temp_result.sender_detail_address or ""
+                detail_address=temp_result.sender_detail_address or "",
             ),
             body=temp_result.body,
             strategy_summary=temp_result.strategy_summary,
             followup_strategy=temp_result.followup_strategy,
             legal_basis=[],  # ✅ 빈 배열로 설정
-            case_basis=[],   # ✅ 빈 배열로 설정
+            case_basis=[],  # ✅ 빈 배열로 설정
             certification_metadata=CertificationMetadata(
                 generation_time=generation_time
             ),
-            user_query=input_data.user_query
+            user_query=input_data.user_query,
         )
-    
+
     def _create_fallback_result(self, input_data, start_time, error):
         """에러 시 안전한 폴백 결과 생성"""
         generation_time = round(time.time() - start_time, 2)
-        
+
         return LetterGenerationOutput(
             id=None,
             user_id=None,
@@ -324,8 +341,9 @@ class LetterGenerationOrchestrator:
             certification_metadata=CertificationMetadata(
                 generation_time=generation_time
             ),
-            user_query=input_data.user_query
+            user_query=input_data.user_query,
         )
+
 
 # 외부 API 호출용 함수 (기존 호환성 유지)
 async def run_letter_chain(input_data: LetterGenerationInput) -> LetterGenerationOutput:

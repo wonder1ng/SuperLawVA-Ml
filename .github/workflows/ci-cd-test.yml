@@ -1,0 +1,107 @@
+name: CI/CD Pipeline for ML Project
+
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/*'
+  pull_request:
+    branches:
+      - develop
+
+# 동일한 브랜치에서 새 워크플로우가 시작되면 이전 워크플로우 취소
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run CI tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # pip 의존성 캐싱으로 빌드 속도 향상
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ml/requirements.txt
+          pip install pytest flake8 black isort
+
+      - name: Lint (flake8)          # continue-on-error → 경고로만
+        run: flake8 ml --select=E9,F63,F7,F82 --statistics
+        continue-on-error: true
+
+      - name: Lint (isort check)
+        run: isort --check-only --diff ml
+        continue-on-error: true
+
+      - name: Lint (black check)
+        run: black --check --diff ml
+        continue-on-error: true
+
+      - name: Run tests
+        run: pytest ml --verbose --tb=short
+
+      - name: Test Docker build
+        run: |
+          # Docker 빌드 테스트 (이미지 무결성 확인)
+          cd ml
+          docker build -t ml-app-test .
+          docker rmi ml-app-test
+          
+  deploy:
+    name: Deploy to EC2
+    needs: test
+    runs-on: ubuntu-latest
+    if: (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/')) && github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.ML_EC2_SSH_KEY }}
+
+      - name: Deploy & restart container on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
+              ubuntu@${{ secrets.EC2_HOST }} << 'SSH_EOF'
+            set -e
+            echo "=== 배포 시작: $(date) ==="
+
+            cd ~/ml/ml
+            BRANCH="${{ github.ref_name }}"
+            git fetch origin "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+
+            # ───── .env 작성 (echo 방식) ─────
+            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}"       > .env
+            echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
+            echo "HOST=0.0.0.0"                                        >> .env
+            echo "PORT=8000"                                           >> .env
+            echo "RELOAD=true"                                         >> .env
+            echo "CLAUDE_MODEL=claude-sonnet-4-20250514"               >> .env
+
+            docker compose down || true
+            docker compose up -d --build
+            docker compose ps
+
+            echo "🎉 배포 완료: $(date)"
+          SSH_EOF

@@ -17,7 +17,6 @@ WORKDIR /app
 # 소스 코드 복사
 COPY . .
 COPY requirements.txt .
-COPY .env .
 
 # 의존성 설치
 RUN pip install --no-cache-dir -r requirements.txt
