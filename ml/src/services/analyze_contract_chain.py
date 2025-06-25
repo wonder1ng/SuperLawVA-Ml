@@ -448,6 +448,9 @@ class ContractAnalysisOrchestrator:
     
     async def analyze_contract(self, input_data: ContractAnalysisInput) -> ContractAnalysisOutput:
         """메인 실행 함수"""
+	with open("./tmp_input.txt", "w", encoding="utf-8") as f:
+	    f.write(str(input_data))
+
         start_time = time.time()
         
         try:
