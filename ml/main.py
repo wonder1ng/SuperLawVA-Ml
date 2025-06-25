@@ -124,7 +124,7 @@ async def lifespan(app: FastAPI):
 
 # FastAPI 앱 생성
 app = FastAPI(
-    title="🏛️ 통합 AI 법률 서비스 API",
+    title="🏛️ 통합 AI 법률 서비스 API v2",
     description="""
     ## 📋 통합 AI 법률 서비스
     
