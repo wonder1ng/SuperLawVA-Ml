@@ -45,25 +45,25 @@ jobs:
       - name: Lint with flake8
         run: |
           # 코드 품질 검사 (경고는 허용, 에러만 실패)
-          flake8 ml/ml --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 ml --count --select=E9,F63,F7,F82 --show-source --statistics
           # 전체 린팅 (경고 포함)
-          flake8 ml/ml --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+          flake8 ml --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
 
       - name: Check import sorting with isort
-        run: isort --check-only --diff ml/ml
+        run: isort --check-only --diff ml
 
       - name: Check code formatting with black
-        run: black --check --diff ml/ml
+        run: black --check --diff ml
 
       - name: Run tests with pytest
         run: |
           # 테스트 실행 및 커버리지 체크
-          pytest ml/ml --verbose --tb=short
+          pytest ml --verbose --tb=short
 
       - name: Test Docker build
         run: |
           # Docker 빌드 테스트 (이미지 무결성 확인)
-          cd ml/ml
+          cd ml
           docker build -t ml-app-test .
           docker rmi ml-app-test
 
