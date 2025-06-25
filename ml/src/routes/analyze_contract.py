@@ -9,7 +9,8 @@ import traceback
 from config import APP_VERSION
 from fastapi import APIRouter, HTTPException
 from services.analyze_contract_chain import run_analysis_chain
-from services.schema.analyze_schema import ContractAnalysisInput, ContractAnalysisOutput
+from services.schema.analyze_schema import (ContractAnalysisInput,
+                                            ContractAnalysisOutput)
 
 router = APIRouter()
 

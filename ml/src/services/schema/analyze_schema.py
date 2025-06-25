@@ -7,12 +7,8 @@
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
-from services.schema.shared_schema import (
-    BaseInput,
-    CaseBasis,
-    CertificationMetadata,
-    LegalBasis,
-)
+from services.schema.shared_schema import (BaseInput, CaseBasis,
+                                           CertificationMetadata, LegalBasis)
 
 
 # INPUT 정보 (계약서 검토 전용)

@@ -8,14 +8,9 @@
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
-from services.schema.shared_schema import (
-    BaseInput,
-    BaseOutput,
-    CaseBasis,
-    CertificationMetadata,
-    LegalBasis,
-    PersonInfo,
-)
+from services.schema.shared_schema import (BaseInput, BaseOutput, CaseBasis,
+                                           CertificationMetadata, LegalBasis,
+                                           PersonInfo)
 
 
 # INPUT 정보 (내용증명 전용)

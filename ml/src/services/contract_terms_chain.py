@@ -12,16 +12,10 @@ import json
 import re
 from typing import Any, Dict, List, Set
 
-from config import (
-    ANTHROPIC_API_KEY,
-    CASE_COLLECTION_NAME,
-    CHROMA_CASE_DB_PATH,
-    CHROMA_LAW_DB_PATH,
-    LAW_COLLECTION_NAME,
-    MAX_DISTANCE,
-    OPENAI_API_KEY,
-    VECTOR_SEARCH_K,
-)
+from config import (ANTHROPIC_API_KEY, CASE_COLLECTION_NAME,
+                    CHROMA_CASE_DB_PATH, CHROMA_LAW_DB_PATH,
+                    LAW_COLLECTION_NAME, MAX_DISTANCE, OPENAI_API_KEY,
+                    VECTOR_SEARCH_K)
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
@@ -33,13 +27,8 @@ from langchain_community.vectorstores import Chroma
 from src.vectordb.loaders.load_case_db import load_case_vectorstore
 from src.vectordb.loaders.load_law_db import load_law_vectorstore
 
-from .schema.terms_schema import (
-    CaseBasis,
-    ContractInput,
-    ContractOutput,
-    LegalBasis,
-    RecommendedAgreement,
-)
+from .schema.terms_schema import (CaseBasis, ContractInput, ContractOutput,
+                                  LegalBasis, RecommendedAgreement)
 
 # import os
 # from dotenv import load_dotenv
