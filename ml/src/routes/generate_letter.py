@@ -9,8 +9,7 @@ import traceback
 from config import APP_VERSION
 from fastapi import APIRouter, HTTPException
 from services.generate_letter_chain import run_letter_chain
-from services.schema.letter_schema import (LetterGenerationInput,
-                                           LetterGenerationOutput)
+from services.schema.letter_schema import LetterGenerationInput, LetterGenerationOutput
 
 router = APIRouter()
 

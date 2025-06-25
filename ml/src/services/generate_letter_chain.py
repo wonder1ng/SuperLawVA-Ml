@@ -10,23 +10,27 @@ from datetime import datetime
 
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
+
 # 스키마 import
-from services.schema.letter_schema import (LetterGenerationInput,
-                                           LetterGenerationOutput,
-                                           TempLetterOutput)
+from services.schema.letter_schema import (
+    LetterGenerationInput,
+    LetterGenerationOutput,
+    TempLetterOutput,
+)
 from services.schema.shared_schema import CertificationMetadata, PersonInfo
 from services.shared.case_processor import CaseProcessor, convert_to_case_basis
-from services.shared.contract_parser import (extract_parties_info,
-                                             summarize_contract_for_letter)
+from services.shared.contract_parser import (
+    extract_parties_info,
+    summarize_contract_for_letter,
+)
+
 # 공통 모듈들 import
 from services.shared.document_search import DocumentSearchService
 from services.shared.formatters import DocumentFormatter
-from services.shared.legal_processor import (LegalProcessor,
-                                             convert_to_legal_basis)
+from services.shared.legal_processor import LegalProcessor, convert_to_legal_basis
 from services.shared.llm_config import get_claude_llm_for_letter
 
 # from langchain.output_parsers import PydanticOutputParser
-
 
 
 # 내용증명 전용 LLM 설정

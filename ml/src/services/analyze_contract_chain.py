@@ -11,28 +11,36 @@ from datetime import datetime
 from typing import List, Optional
 
 # config import 추가
-from config import (CASE_CONTENT_PREVIEW_LENGTH, CASE_SEARCH_LIMIT,
-                    LAW_SEARCH_LIMIT)
+from config import CASE_CONTENT_PREVIEW_LENGTH, CASE_SEARCH_LIMIT, LAW_SEARCH_LIMIT
+
 # 기존
 from dotenv import load_dotenv
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
+
 # 조항별 분석용 스키마
 from pydantic import BaseModel, Field
+
 # 스키마 import
-from services.schema.analyze_schema import (AnalysisMetadata, ClauseAnalysis,
-                                            ClauseCaseBasis, ClauseLegalBasis,
-                                            ContractAnalysisInput,
-                                            ContractAnalysisOutput,
-                                            RecommendedAgreement)
+from services.schema.analyze_schema import (
+    AnalysisMetadata,
+    ClauseAnalysis,
+    ClauseCaseBasis,
+    ClauseLegalBasis,
+    ContractAnalysisInput,
+    ContractAnalysisOutput,
+    RecommendedAgreement,
+)
 from services.shared.case_processor import CaseProcessor, convert_to_case_basis
-from services.shared.contract_parser import (extract_contract_clauses,
-                                             extract_key_contract_info)
+from services.shared.contract_parser import (
+    extract_contract_clauses,
+    extract_key_contract_info,
+)
+
 # 공통 모듈들 import
 from services.shared.document_search import DocumentSearchService
 from services.shared.formatters import DocumentFormatter
-from services.shared.legal_processor import (LegalProcessor,
-                                             convert_to_legal_basis)
+from services.shared.legal_processor import LegalProcessor, convert_to_legal_basis
 from services.shared.llm_config import get_claude_llm_for_review
 
 load_dotenv()

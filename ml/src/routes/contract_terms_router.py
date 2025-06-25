@@ -15,8 +15,12 @@ from config import APP_VERSION
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from services.contract_terms_chain import generate_special_terms
-from services.schema.terms_schema import (ContractInput, ContractOutput,
-                                          ContractResponse, ErrorResponse)
+from services.schema.terms_schema import (
+    ContractInput,
+    ContractOutput,
+    ContractResponse,
+    ErrorResponse,
+)
 
 # 로거 설정
 logging.basicConfig(level=logging.INFO)

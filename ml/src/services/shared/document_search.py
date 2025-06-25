@@ -12,8 +12,12 @@ from typing import List, Tuple
 
 # config import 시도 및 디버깅
 try:
-    from config import (CASE_RESULT_LIMIT, CASE_SCORE_THRESHOLD,
-                        CASE_SEARCH_LIMIT, LAW_SEARCH_LIMIT)
+    from config import (
+        CASE_RESULT_LIMIT,
+        CASE_SCORE_THRESHOLD,
+        CASE_SEARCH_LIMIT,
+        LAW_SEARCH_LIMIT,
+    )
 
     print("✅ DocumentSearchService: config import 성공")
 except Exception as e:

@@ -9,8 +9,11 @@ import asyncio
 from typing import Any, Dict, List
 
 # config import 추가
-from config import (CASE_SNIPPET_LENGTH, CASE_SUMMARY_PREVIEW_LENGTH,
-                    CASE_TEXT_MAX_LENGTH)
+from config import (
+    CASE_SNIPPET_LENGTH,
+    CASE_SUMMARY_PREVIEW_LENGTH,
+    CASE_TEXT_MAX_LENGTH,
+)
 from services.schema.shared_schema import CaseBasis, CaseSummary
 
 
