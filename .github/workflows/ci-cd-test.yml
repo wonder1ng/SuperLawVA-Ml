@@ -1,0 +1,178 @@
+name: CI/CD Pipeline for ML Project
+
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/*'
+  pull_request:
+    branches:
+      - develop
+
+# 동일한 브랜치에서 새 워크플로우가 시작되면 이전 워크플로우 취소
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run CI tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # pip 의존성 캐싱으로 빌드 속도 향상
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ml/ml/requirements.txt
+          pip install pytest flake8 black isort
+
+      - name: Lint with flake8
+        run: |
+          # 코드 품질 검사 (경고는 허용, 에러만 실패)
+          flake8 ml/ml --count --select=E9,F63,F7,F82 --show-source --statistics
+          # 전체 린팅 (경고 포함)
+          flake8 ml/ml --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+
+      - name: Check import sorting with isort
+        run: isort --check-only --diff ml/ml
+
+      - name: Check code formatting with black
+        run: black --check --diff ml/ml
+
+      - name: Run tests with pytest
+        run: |
+          # 테스트 실행 및 커버리지 체크
+          pytest ml/ml --verbose --tb=short
+
+      - name: Test Docker build
+        run: |
+          # Docker 빌드 테스트 (이미지 무결성 확인)
+          cd ml/ml
+          docker build -t ml-app-test .
+          docker rmi ml-app-test
+
+  deploy:
+    name: Deploy to EC2
+    needs: test    # CI 통과해야 배포 실행됨
+    runs-on: ubuntu-latest
+    # develop 브랜치에서만 배포 실행
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.ML_EC2_SSH_KEY }}
+
+      - name: Deploy to EC2 and restart container
+        run: |
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e  # 에러 시 즉시 중단
+            set -x  # 실행 명령어 출력 (디버깅용)
+            
+            echo "=== 배포 시작: $(date) ==="
+            
+            # 프로젝트 디렉토리로 이동
+            cd ~/ml/ml || {
+              echo "❌ 프로젝트 디렉토리를 찾을 수 없습니다."
+              exit 1
+            }
+            
+            echo "=== Git 업데이트 ==="
+            # 브랜치 동적 처리 (하드코딩 제거)
+            BRANCH_NAME="${{ github.ref_name }}"
+            echo "배포할 브랜치: $BRANCH_NAME"
+            
+            # Git 상태 확인 및 업데이트
+            git fetch origin "$BRANCH_NAME" || {
+              echo "❌ Git fetch 실패"
+              exit 1
+            }
+            
+            git reset --hard "origin/$BRANCH_NAME" || {
+              echo "❌ Git reset 실패"
+              exit 1
+            }
+            
+            echo "현재 커밋: $(git rev-parse HEAD)"
+            
+            echo "=== Docker 컨테이너 관리 ==="
+            # 기존 컨테이너 정리
+            if docker compose ps | grep -q "ml"; then
+              echo "기존 컨테이너 중지 중..."
+              docker compose down || echo "⚠️ 컨테이너 중지 중 일부 오류 발생 (무시됨)"
+            fi
+            
+            # 미사용 이미지 정리
+            docker system prune -f || echo "⚠️ Docker 정리 중 일부 오류 발생 (무시됨)"
+            
+            echo "=== 새 컨테이너 시작 ==="
+            # 새 컨테이너 빌드 및 시작
+            docker compose up -d --build || {
+              echo "❌ Docker 컨테이너 시작 실패"
+              echo "=== Docker 로그 확인 ==="
+              docker compose logs --tail=50
+              exit 1
+            }
+            
+            echo "=== 배포 상태 확인 ==="
+            # 컨테이너 상태 확인
+            docker compose ps
+            
+            # 헬스체크 (최대 3분 대기)
+            echo "애플리케이션 시작 대기 중..."
+            for i in {1..6}; do
+              echo "헬스체크 시도 $i/6..."
+              if docker compose exec -T ml-app curl -f http://localhost:8000/health 2>/dev/null; then
+                echo "✅ 애플리케이션이 정상적으로 시작되었습니다!"
+                break
+              elif [ $i -eq 6 ]; then
+                echo "❌ 애플리케이션 시작 실패"
+                echo "=== 최근 로그 확인 ==="
+                docker compose logs --tail=100
+                exit 1
+              else
+                echo "⏳ 애플리케이션 시작 대기 중... ($i/6)"
+                sleep 30
+              fi
+            done
+            
+            echo "=== 최근 로그 확인 ==="
+            docker compose logs --tail=20
+            
+            echo "🎉 배포 완료: $(date)"
+          EOF
+
+      - name: Deployment Success Notification
+        if: success()
+        run: |
+          echo "✅ 배포가 성공적으로 완료되었습니다!"
+          echo "브랜치: ${{ github.ref_name }}"
+          echo "커밋: ${{ github.sha }}"
+
+      - name: Deployment Failure Notification  
+        if: failure()
+        run: |
+          echo "❌ 배포가 실패했습니다!"
+          echo "브랜치: ${{ github.ref_name }}"
+          echo "커밋: ${{ github.sha }}"
+          echo "로그를 확인해주세요."
