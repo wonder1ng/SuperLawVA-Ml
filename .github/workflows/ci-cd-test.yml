@@ -84,29 +84,24 @@ jobs:
           ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
               ubuntu@${{ secrets.EC2_HOST }} << 'SSH_EOF'
             set -e
-
             echo "=== 배포 시작: $(date) ==="
-            cd ~/ml/ml
 
-            # Git 업데이트
+            cd ~/ml/ml
             BRANCH="${{ github.ref_name }}"
             git fetch origin "$BRANCH"
             git reset --hard "origin/$BRANCH"
 
-            # .env 작성
-            cat > .env << 'ENV_EOF'
-OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-HOST=0.0.0.0
-PORT=8000
-RELOAD=true
-CLAUDE_MODEL=claude-sonnet-4-20250514
-ENV_EOF
+            # ───── .env 작성 (echo 방식) ─────
+            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}"       > .env
+            echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
+            echo "HOST=0.0.0.0"                                        >> .env
+            echo "PORT=8000"                                           >> .env
+            echo "RELOAD=true"                                         >> .env
+            echo "CLAUDE_MODEL=claude-sonnet-4-20250514"               >> .env
 
-            # 컨테이너 재배포
             docker compose down || true
             docker compose up -d --build
-
             docker compose ps
+
             echo "🎉 배포 완료: $(date)"
-SSH_EOF
+          SSH_EOF
