@@ -35,11 +35,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # import os
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
 
 # 환경변수 로드
-# load_dotenv()
+load_dotenv()
 
 # 라우터 임포트
 try:
