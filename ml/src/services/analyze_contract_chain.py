@@ -500,7 +500,7 @@ class ContractAnalysisOrchestrator:
     ) -> ContractAnalysisOutput:
         """메인 실행 함수"""
 
-        with open("./tmp_input.txt", "w", encoding="uft-8") as f:
+        with open("./tmp_input.txt", "w", encoding="utf-8") as f:
             f.write(str(input_data))
 
         start_time = time.time()
