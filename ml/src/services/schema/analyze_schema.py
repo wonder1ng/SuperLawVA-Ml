@@ -83,7 +83,7 @@ class ContractAnalysisOutput(BaseModel):
 
     # 기본 메타데이터
     id: int = Field(description="분석 결과 고유 ID")
-    user_id: int = Field(description="사용자 ID")
+    user_id: str = Field(description="사용자 ID")
     contract_id: int = Field(description="계약서 ID")
     created_date: str = Field(description="생성 날짜")
 
@@ -93,11 +93,7 @@ class ContractAnalysisOutput(BaseModel):
     recommended_agreements: List[RecommendedAgreement] = Field(
         description="추가 권고 특약 목록"
     )
-
-    # 🔧 전체 요약은 빈 배열로 (또는 아예 제거 가능)
-    # legal_basis: List[LegalBasis] = Field(default_factory=list, description="전체 법령 근거 목록 (미사용)")
-    # case_basis: List[CaseBasis] = Field(default_factory=list, description="전체 판례 근거 목록 (미사용)")
-
+  
     # 메타데이터
     analysis_metadata: AnalysisMetadata = Field(description="분석 메타데이터")
 
