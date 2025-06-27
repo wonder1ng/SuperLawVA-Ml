@@ -1,4 +1,4 @@
-# contract_schema.py
+# terms_schema.py
 """
 Description: 계약서 특약사항 생성 기능의 데이터 스키마 정의 (입력/출력/오류 응답 등)
 Author: ooheunsu
@@ -56,7 +56,7 @@ class ContractInput(BaseModel):
 class ContractOutput(BaseModel):
     # 메타데이터
     id: Optional[int] = Field(None, description="응답 고유 ID")
-    user_id: Optional[int] = Field(None, description="사용자 ID")
+    user_id: Optional[str] = Field(None, description="사용자 ID")
     contract_id: Optional[int] = Field(None, description="계약서 ID")
     created_date: datetime = Field(default_factory=datetime.now, description="생성일시")
 
