@@ -38,7 +38,7 @@ class LetterGenerationOutput(BaseModel):
 
     # 4순위: 메타데이터
     id: Optional[int] = None
-    user_id: Optional[int] = None
+    user_id: Optional[str] = None
     contract_id: Optional[int] = None
     created_date: Optional[str] = None
     certification_metadata: CertificationMetadata
