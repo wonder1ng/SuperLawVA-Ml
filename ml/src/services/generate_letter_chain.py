@@ -41,9 +41,6 @@ letter_prompt = ChatPromptTemplate.from_template(
 관련 법령:
 {related_laws_str}
 
-관련 판례:
-{related_cases_str}
-
 계약 정보:
 {contract_summary}
 
