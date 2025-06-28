@@ -83,7 +83,7 @@ class ContractAnalysisOutput(BaseModel):
 
     # 기본 메타데이터
     id: int = Field(description="분석 결과 고유 ID")
-    user_id: int = Field(description="사용자 ID")
+    user_id: str = Field(description="사용자 ID")
     contract_id: int = Field(description="계약서 ID")
     created_date: str = Field(description="생성 날짜")
 
