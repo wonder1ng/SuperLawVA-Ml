@@ -73,6 +73,8 @@ CLAUDE_MODEL = os.getenv("CLAUDE_MODEL")
 CLAUDE_TEMPERATURE = 0.1
 CLAUDE_MAX_TOKENS = 4_000
 
+GPT_MODEL = os.getenv("GPT_MODEL")
+
 # ───────────────────────────────────────────
 # 로깅·성능·검색·보안 등 고정 상수
 # ───────────────────────────────────────────

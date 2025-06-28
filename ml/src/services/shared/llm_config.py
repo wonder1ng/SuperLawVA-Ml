@@ -5,7 +5,7 @@
 """
 
 # config import 추가
-from config import CLAUDE_MODEL
+from config import CLAUDE_MODEL, GPT_MODEL
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 
@@ -30,6 +30,14 @@ def get_claude_llm_for_review():
     """계약서 검토용 Claude LLM 설정"""
     return ChatAnthropic(
         model=CLAUDE_MODEL,
+        temperature=0,  # 정확한 분석을 위해 낮은 temperature
+        max_tokens=6000,
+    )
+
+def get_gpt_llm_for_review():
+    """계약서 검토용 gpt LLM 설정"""
+    return ChatOpenAI(
+        model=GPT_MODEL,
         temperature=0,  # 정확한 분석을 위해 낮은 temperature
         max_tokens=6000,
     )
