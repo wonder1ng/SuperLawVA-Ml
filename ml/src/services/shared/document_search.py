@@ -1,5 +1,5 @@
 """
-[services/shared/document_search.py] - 벡터 검색 공통 서비스 (디버깅 코드 추가)
+[services/shared/document_search.py] - 벡터 검색 공통 서비스 (중복 제거 로직 추가)
 
 기존 generate_letter_chain.py에서 추출한 DocumentSearchService
 모든 기능(내용증명, 계약서검토, 특약생성)에서 사용
@@ -165,7 +165,7 @@ class DocumentSearchService:
             raise
 
     async def search_documents(self, user_query: str) -> Tuple[List, List]:
-        """법령과 판례 문서 검색 (기본 - 내용증명용) - 디버깅 코드 포함"""
+        """법령과 판례 문서 검색 (기본 - 내용증명용) - case_id 중복 제거 로직 추가"""
         print(f"🔍 문서 검색 시작 - 쿼리: '{user_query}'")
 
         if not self.law_vectorstore:
@@ -186,7 +186,7 @@ class DocumentSearchService:
             )
             print(f"✅ 법령 검색 완료: {len(law_docs)}개 결과")
 
-            # 판례 검색 (유사도 필터링)
+            # 판례 검색 (유사도 필터링 + case_id 중복 제거)
             print(f"⚖️ 판례 검색 중... (limit: {CASE_SEARCH_LIMIT})")
             case_docs_with_scores = await loop.run_in_executor(
                 None,
@@ -197,15 +197,35 @@ class DocumentSearchService:
 
             print(f"📊 판례 검색 원본 결과: {len(case_docs_with_scores)}개")
 
-            # 유사도 필터링
-            case_docs = [
-                doc
-                for doc, score in case_docs_with_scores
-                if score <= CASE_SCORE_THRESHOLD
-            ][:CASE_RESULT_LIMIT]
+            # case_id 기반 중복 제거 로직
+            seen_case_ids = set()
+            unique_case_docs = []
+
+            for doc, score in case_docs_with_scores:
+                # 유사도 임계값 체크
+                if score <= CASE_SCORE_THRESHOLD:
+                    # case_id 가져오기
+                    case_id = doc.metadata.get('case_id')
+                    
+                    # case_id가 있고 중복되지 않은 경우만 추가
+                    if case_id and case_id not in seen_case_ids:
+                        seen_case_ids.add(case_id)
+                        unique_case_docs.append(doc)
+                        print(f"   추가된 판례: case_id={case_id}, 점수={score:.3f}")
+                        
+                        # 결과 제한에 도달하면 중단
+                        if len(unique_case_docs) >= CASE_RESULT_LIMIT:
+                            break
+                    else:
+                        if not case_id:
+                            print(f"   제외됨: case_id 없음, 점수={score:.3f}")
+                        else:
+                            print(f"   제외됨: 중복 case_id={case_id}, 점수={score:.3f}")
+
+            case_docs = unique_case_docs
 
             print(
-                f"🔽 판례 필터링 후 결과: {len(case_docs)}개 (threshold: {CASE_SCORE_THRESHOLD})"
+                f"🔽 판례 필터링 후 결과: {len(case_docs)}개 (threshold: {CASE_SCORE_THRESHOLD}, 중복 제거 완료)"
             )
 
             # 점수 정보 출력
@@ -240,7 +260,7 @@ class DocumentSearchService:
     async def search_cases_by_issue(
         self, issue_description: str, limit: int = 5
     ) -> List:
-        """문제 상황 기반 판례 검색 (계약서 검토에서 사용) - 디버깅 코드 포함"""
+        """문제 상황 기반 판례 검색 (계약서 검토에서 사용) - case_id 중복 제거 로직 추가"""
         print(f"⚖️ 판례 이슈 검색: '{issue_description}' (limit: {limit})")
 
         if not self.case_vectorstore:
@@ -255,17 +275,26 @@ class DocumentSearchService:
                 ),
             )
 
-            # 문제 판례는 더 엄격한 유사도 기준 적용
-            case_docs = [
-                doc
-                for doc, score in case_docs_with_scores
-                if score < CASE_SCORE_THRESHOLD
-            ][:limit]
+            # case_id 기반 중복 제거 로직 (더 엄격한 유사도 기준 적용)
+            seen_case_ids = set()
+            unique_case_docs = []
+
+            for doc, score in case_docs_with_scores:
+                # 더 엄격한 유사도 기준 적용
+                if score < CASE_SCORE_THRESHOLD:
+                    case_id = doc.metadata.get('case_id')
+                    
+                    if case_id and case_id not in seen_case_ids:
+                        seen_case_ids.add(case_id)
+                        unique_case_docs.append(doc)
+                        
+                        if len(unique_case_docs) >= limit:
+                            break
 
             print(
-                f"✅ 판례 이슈 검색 완료: {len(case_docs)}개 결과 (필터링 전: {len(case_docs_with_scores)}개)"
+                f"✅ 판례 이슈 검색 완료: {len(unique_case_docs)}개 결과 (필터링 전: {len(case_docs_with_scores)}개, 중복 제거 완료)"
             )
-            return case_docs
+            return unique_case_docs
         except Exception as e:
             print(f"❌ 판례 이슈 검색 실패: {e}")
             return []
