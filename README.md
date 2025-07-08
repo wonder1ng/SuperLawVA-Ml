@@ -1,7 +1,7 @@
 # SuperLawVA MLOps 🤖
 
 <div align="center">
-  <img src="https://your-logo-url-here.png" alt="SuperLawVA Logo" width="200"/>
+  <img src="https://github.com/wonder1ng/SuperLawVA-Front/blob/develop/public/logo.svg" alt="SuperLawVA Logo" width="200"/>
   
   **AI 기반 법률 지원 서비스를 위한 MLOps 시스템**
   
